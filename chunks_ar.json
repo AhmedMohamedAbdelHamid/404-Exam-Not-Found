@@ -1,0 +1,244 @@
+[
+  {
+    "chunk_id": "ar_ch12_12-1_p167",
+    "topic": "algorithm",
+    "language": "ar",
+    "chunk_type": "algorithm",
+    "text": "دراسة المعلومات\n168\nالنقاط الرئيسية\n. مفهوم الخوارزميات1﻿\n .) : \u0007طريقة أو إجراء لحل مشكلة معينةAlgorithm( الخوارزمية  )1(\n.)  المخططات االنسيابية ومخططات النشاط : الرسوم البيانية التي تمثل الخوارزميات بطريقة مرئية وشاملة2(\n>مخطط انسيابي) : \u0007طريقة لتوضيح تدفق عملية واحدة. <قائمة رموز المخططات االنسيابية(  ]1[  \nSymbol\nName\nMeaning\n)Terminal(\nStart/End\n)Display(\nDisplay on a screen, etc.\n)Process(\nOperations and Other \nProcesses\n)Data(\nData input and output\n)Conditionalbranch(\nBranching according to \nconditions\n)Repeat(\nStart of a repetition\nEnd of a repetition\n)Line(\nFlow of data and control\n>مخطط النشاط) : \u0007طريقة مناسبة لتمثيل تدفقات العملية المتوازية. <قائمة الرموز في مخططات النشاط(  ]2[  \nSymbol\nName\n )Start(\n )End(\n )Control(\n )Transition(\n )Conditional branch(\n )Parallel process(\n )Send(\n Figure 1. Process flow from waking up\nto leaving\nWake up in the morning\nIs it suny?\nleave\nBring an umbrella\nNo\nyes\nCustomer\nInsert card a\nnd enter PIN\nConfirm withdrawal\n amount\nDetermine\n withdrawal\nInput withdrawal\n amount\nWithdraw cash\nFigure 2: Cash withdrawal process at an ATM\n الخوارزميات1-12\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nSymbol Name Meaning\nWake up in the morning\n)Terminal( Start/End\n)Display(\nDisplay on a screen, etc. No\nOperations and Other\n)Process(\nProcesses Bring an umbrella\n)Data( Data input and output yes\nBranching according to\nleave\n)Conditionalbranch(\nconditions Figure 1. Process flow from waking up\nto leaving\nStart of a repetition\n)Repeat(\nEnd of a repetition\n)Line(\nFlow of data and control\nSymbol Name\nCustomer\n)Start(\n)End(\nInsert card a\nnd enter PIN\n)Control(\nConfirm withdrawal\namount\n)Transition(\nInput withdrawal\namount\n)Conditional branch(\nDetermine\nwithdrawal\n)Parallel process(\nWithdraw cash\n)Send(\nFigure 2: Cash withdrawal process at an ATM\n168",
+    "source_pages": [
+      167,
+      167
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-1_p168",
+    "topic": "algorithm",
+    "language": "ar",
+    "chunk_type": "algorithm",
+    "text": "169\n. هيكل التحكم2﻿\n.يمكن تمثيل الخوارزميات بشكل أساسي باستخدام ثالثة هياكل تحكم جنبا إلى جنب مع اإلدخال / اإلخراج\n(Sequential structure)\n(Repeating structure)\n(Branching structure)\nExecutes \nprocesses \naccording to \nthe order.\nStart\nProcess 1\nProcess 2\nEnd\nRepeats \nthe process \nwhile the \nconditions \nare met.\nLoop condition\nProcess 1\nLoop \nSeparates \nprocesses \naccording \nto the \nconditions.\nProcess 1\nCondition\nNo\nYes\nProcess 2\n. لغة البرمجة3﻿\n.لغة البرمجة) : \u0007هي لغة تستخدم للتعبير عن الخوارزميات بطريقة يمكن للكمبيوتر فهمها(   )1(\n.)programming- يشار إلى إنشاء برنامج (كود المصدر) باستخدام لغة برمجة باسم (البرمجة・\n.) التي يفهمها الكمبيوترMachine Language -   تتم كتابة البرامج باستخدام لغات البرمجة ثم ترجمتها إلى (لغة األلة・\n) أمثلة على لغات البرمجة2(\n ) : \u0007اللغة المستخدمة في مجاالت مثل الذكاء االصطناعي واإلحصاء ، ويمكن يتم تنفيذها بأقل عددPython(\u0007 ]1[\nأسطر برمجية\n ) : \u0007لغة ال يمكن تشغيلها / تنفيذها إال داخل متصفح الويب ، مما يجعلها مثالية ألغراضJavaScript(\u0007  ]2[\n.متعلقة بالويب\n ،blocks -   \u0007لغة برمجة مرئية تم تطويرها لألغراض التعليمية. تكون البرمجة بإستخدام الكتل: )Scratch(\u0007  ]3[\n.وهو أمر منطقي وسهل الفهم\nاختبر معلوماتك\n.أجب عن األسئلة التالية\n)  \u0007ما هو المصطلح الذي يصف ترتيب الحسابات أو التسلسل الذي يتم فيه إنشاء األشياء؟1(\n )  \u0007ما هو مصطلح الرسم التخطيطي الذي يمثل بصريا خوارزمية وهل هو مثالي إلظهار2(\nتدفق العمليات المتوازية؟\n ) \u0007 الرسم البياني الموجود  عبارة عن مخطط انسيابي للمشاة يشير إلى \"تابع إذا كانت3(\nاإلشارة خضراء. خالف ذلك توقف\n ،  ] من الخيارات من أ إلى ح3[ ] إلى1[  اختر المناسب الخيار الذي يناسب الفراغات من\n.واإلجابة باستخدام الحروف\n اإلشارة صفراء )(ب\tاإلشارة حمراء  )(أ\n اإلشارة ليست خضراء )(ث\tاإلشارة ليست حمراء  )(ت\n توقف )(ح\tممكن المتابعة )(ج\n)؟3( )  ما هو مصطلح هيكل التحكم مثل4(\n)  \u0007ما هي لغة البرمجة المستخدمة في مجاالت مثل الذكاء االصطناعي واإلحصاء ، ويمكن يتم تنفيذها بأقل قدر من الكود؟5(\nﺗﻮﻗﻒ\n[2]\n[3]\n[1]\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\n(Sequential structure) (Repeating structure) (Branching structure)\nExecutes Repeats Separates\nStart\nLoop condition\nprocesses the process processes\nNo\nCondition\naccording to while the according\nProcess 1\nYes\nthe order. conditions Process 1 to the\nProcess 1 Process 2\nProcess 2\nare met. conditions.\nEnd Loop\n[1]\n[2] [3]\nﺗﻮﻗﻒ\n169",
+    "source_pages": [
+      168,
+      168
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-1_p169",
+    "topic": "algorithm",
+    "language": "ar",
+    "chunk_type": "algorithm",
+    "text": "170\nالشرح\n)  خوارزمية1(\n)  مخطط النشاط2(\n)ج( ]3[  )ح( ]2[  )أ( ]1[  )3(\n)  هيكل متفرع4(\n)  بايثون5(\nجرب بنفسك\n.(أ)جب عن األسئلة التالية\n.] في الجمل التالية من الخيارات من أ إلى ح ، وأجب باستخدام الحروف4[ ] إلى1[ )  اختر ما يناسب الفراغات1(\n ]). تسمى اللغة التي أُنشئت لتوجيه جهاز الكمبيوتر لتنفيذ1[( يُشار إلى طريقة أو إجراء لحل مشكلة معينة باسم\n )]4[( ]) إلى2[( ]). باإلضافة إلى ذلك، يتم تحويل3[( ]) بـ2[( ])، ويُسمى إنشاء برنامج باستخدام2[( ]) بـ1[(\n.يمكن لجهاز الكمبيوتر فهمه، وفي النهاية يصبح مجموعة من التعليمات تتألف من تركيبات من األصفار واآلحاد\nخوارزمية )(جـ\tمخطط انسيابي )ب(\n\tبرنامج )(أ\nلغة اآللة )(و\tلغة برمجة )(هـ\tبرمجة )(د\n ] من8[ ] إلى1[ )  يلخص الجدول التالي الرموز المستخدمة في المخططات االنسيابية. اختر الخيار الذي يناسب الفراغات2(\n..الخيارات من أ إلى د ، وأجب باستخدام الحروف\nSymbol\nName\nMeaning\nTerminal\n( [1] )\nDisplay\n( [2] )\nData\n( [3] )\nProcess\n( [4] )\nConditional branch\n( [5] )\nRepetition\n( [6] )\n( [7] )\nLine\n( [8] )\n.، وأجب باستخدام الحروفC  إلىA ] بنية تكرارية من المخططات االنسيابية من2[ ] بنية تفريعة و1[ )  اختر ما يمثل3(\nLoop condition\nProcess 1\nLoop \nStart\nProcess 1\nProcess 2\nEnd\nProcess 1\nCondition\nNo\nYes\nProcess 2\nA\nB\nC\n )  \u0007الشكل على اليمين هو مخطط نشاط يوضح العالقة بينك وبين هاتف4(\n ] إلى1[ ذكي عند فتح شاشته. اختر الخيار الذي يناسب الفراغات\n.] من الخيارات من أ إلى ث ، وأجب باستخدام الحروف4[\nالتحقق  من كلمة المرور  )1(\nإدخال  كلمة المرور  )2(\nفتح  الشاشة  )3(\nتشغيل  الشاشة  )4(\n)  \u0007اذكر لغة البرمجة التي يمكن تشغليها/تنفيذها  فقط داخل متصفح5(\n.الويب، مما يجعلها مثالية لألغراض المتعلقة بالويب\nبداية التكرار  )1(\nبداية/نهاية  )2(\nتدفق البيانات والتحكم  )3(\nالتفرع حسب للشروط  )4(\nنهاية التكرار  )5(\n.عرض على الشاشة، إلخ  )6(\nإدخال وإخراج البيانات  )7(\nالعمليات  والعمليات  أخرى  )8(\nStart\nEnd\nNo\nYes\nPerson\n[1]\n[2]\n[3]\n[4]\nError message\nSmartphone\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nSymbol Name Meaning\nTerminal ( [1] )\nDisplay ( [2] )\nData ( [3] )\nProcess ( [4] )\nConditional branch ( [5] )\n( [6] )\nRepetition\n( [7] )\nLine ( [8] )\nA B C\nStart\nLoop condition\nNo\nCondition\nProcess 1\nYes\nProcess 1\nProcess 1 Process 2\nProcess 2\nLoop\nEnd\nPerson Smartphone\nStart\n[1]\n[2] [3]\nYes No\n[4] Error message\nEnd\n170",
+    "source_pages": [
+      169,
+      169
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-1_p170",
+    "topic": "algorithm",
+    "language": "ar",
+    "chunk_type": "algorithm",
+    "text": "171\nتمرين\n.أجب عن األسئلة التالية  1\n.] في الجمل التالية من الخيارات من أ إلى ح ، وأجب باستخدام الحروف3[ ] إلى1[ \u0007اختر المصطلح األنسب الذي يناسب الفراغات  )1(\n ]). من بين المخططات التي تمثل هذا1[( يُشار إلى ترتيب العمليات الحسابية أو التسلسل الالزم إلنشاء شيء ما باسم\n ])، في حين أن المخطط المناسب لتمثيل تدفق2[( بصريًا، المخطط المناسب لتمثيل تدفق عملية واحدة يشار إليه باسم\n.)]3[( العمليات المتوازية يشار إليه باسم\nمخطط النشاط )3(\n\t\n\tلغة البرمجة )2(\n\t\n\tالبرمجة )1(\nمخطط انسيابي )6(\n\t\n\tخوارزمية )5(\n\tشفرة  المصدر\n\t )4(\n  ، وأجبF  إلىA ] من الخيارات من4[ ] إلى1[ )  \u0007اختر الرموز المستخدمة في المخططات االنسيابية التي تتوافق مع المعاني2(\n.باستخدام الحروف\n]  التفرع حسب  للشروط2[\n\t      ]  بداية/نهاية1[\n]  إدخال وإخراج البيانات4[\n\t\n\t\n  ]  بداية التكرار3[\n(A) \n  (B) \n  (C) \n  (D) \n(E) \n  (F) \n  \n  الذي يصور الحالة التي \"إذا كان المنتج فيC  إلىA )  \u0007من المخططات االنسيابية التالية، اختر ما يناسب المخطط من3(\n.المخزون، قم بشرائه؛ وإال، أوقف التسوق.\" أجب بالحرف المناسب\nLoop condition\nProcess 1\nLoop \nStart\nProcess 1\nProcess 2\nEnd\nProcess 1\nCondition\nNo\nYes\nProcess 2\nA\nB\nC\n )  \u0007الشكل على اليمين هو مخطط نشاط يوضح العالقة بينك وبين آلة بيع4(\n ] من4[ ] إلى1[ عند شراء منتج. اختر الخيار الذي يناسب الفراغات\n.الخيارات من أ إلى ث ، وأجب باستخدام الحروف\nأدخل المال  )1(\nيتم عد المال  )2(\nالضغط على زر لشراء المنتج  )3(\nيتم إخراج المنتج  )4(\n )  \u0007اختر لغة البرمجة المرئية التي تم تطويرها للمبتدئين واألطفال من5(\n.الخيارات من أ إلى ث، وأجب باستخدام الحرف\nScratch )(ب\tPython )(أ\nBASIC )(د\t JavaScript )(جـ\nStart\nEnd\nNo\nYes\nPerson\n[1]\n[2]\n[3]\n[4]\nReceive the product\nVending machine\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\n)4(\n(A) (B) (C) (D)\n(E) (F)\nA B C\nStart\nLoop condition\nNo\nCondition\nProcess 1\nYes\nProcess 1\nProcess 1 Process 2\nProcess 2\nEnd Loop\nPerson Vending machine\nStart\n[1]\n[2] [3]\nNo\nYes\nReceive the product [4]\nEnd\n171",
+    "source_pages": [
+      170,
+      170
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-2_p171",
+    "topic": "variables and assignment",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "دراسة المعلومات\n172\nالنقاط الرئيسية\n. المتغيرات والبنية التسلسلية1﻿\n ) : يعرض سلسلة األحرف أو القيمة داخل األقواس ( ). سلسلة األحرف محاطة بعالمات اقتباس مفردة نصفprint(  )1(\n. \"\"  العرض (') او عالمة تنصيص مزدوجة\n. *الحظ أن القيم الرقمية ال يجب أن ُتُحاط بعالمات اقتباس\n01\nprint (\"Hello khalid\")\n.Hello khalid يعرض\n02\nprint (2023)\n.2023 يعرض\n متغير) : \u0007مثل مربع لتخزين البيانات. يمكن تخزين البيانات واسترجاعها من المتغيرات. <مثال> برنامج لعرض نص(\u0007  )2(\n\"Cairo\"\n01\ncity = ‘Cairo’\ncity \" فى المتغيرCairo\" يخصص\n02\nprint (city)\n.\"city\" يعرض قيمة المتغير\n.\")الجانب األيسر * في البرمجة ، ال يعني الرمز \"=\" \"متساو\". بدال من ذلك ، يعني \"(تعيين الجانب األيمن ل\n.معامل التخصيص) : شيء مثل \"=\" يستخدم لتعيين قيمة إلى متغير(  )3(\n.\" يستخدم في العمليات الحسابية-\" \" و+\" المعامل الحسابي) : رمز مثل(  )4(\nArithmetic operator\nMeaning\na + b\n(Addition)\na - b\n(Subtraction)\na * b\n(Multiplication)\na / b\n(Division)\na // b\n(Quotient)\na % b\n(Remainder when a is divided by b)\na ** b\n(a to the power of b)\n<مثال> برنامج يقوم بأربع عمليات حسابية أساسية\n01\na = 5\n5 is assigned to variable a\n02\nb = 3\n3 is assigned to variable b.\n03\n(a + b) print\nDisplays a + b.\n04\n(a - b) print\nDisplays a - b.\n05\n(a * b) print\nDisplays a × b.\n06\n(a / b) print\nDisplays a ÷ b.\n07\n(a // b) print\nDisplays the quotient when a is divided by b.\n08\n(a % b) print\nDisplays the remainder when a is divided by b.\n09\n(a ** b) print\nDisplaysa to the power of b.\nHello Khalid\n2023\nExecution Result\nCairo\nExecution Result\n8\n2\n15\n1.66666\n1\n2\n125\nExecution result\n2-12\n]1[  أساسيات البرمجة\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\n2-12\nHello Khalid print (\"Hello khalid\")\n2023\nprint (2023)\n\"Cairo\"\nCairo print (city)\nArithmetic operator\nMeaning\na + b (Addition)\na - b (Subtraction)\na * b (Multiplication)\na / b (Division)\na // b (Quotient)\na % b (Remainder when a is divided by b)\na ** b (a to the power of b)\na = 5 5 is assigned to variable a\n3 is assigned to variable b.\nb = 3\nDisplays a + b.\n(a + b) print\nDisplays a - b.\n(a - b) print\n(a * b) print\n1.66666\n(a / b) print\nDisplays the quotient when a is divided by b.\n(a // b) print\nDisplays the remainder when a is divided by b.\n(a % b) print\n(a ** b) print Displaysa to the power of b.\n125\n172",
+    "source_pages": [
+      171,
+      171
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-2_p172",
+    "topic": "variables and assignment",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "173\nاختبر معلوماتك\n.أجب عن األسئلة التالية\n.  ، وأجب باستخدام رسالةD  إلىA !\" من الخيارات منHelloWorld\" )  ) اختر البرنامج الذي يعرض1(\n(A)  HelloWorld!\n(B) 'HelloWorld!'\n(C)  print (HelloWorld!)\n(D)  print ('HelloWorld!')\n.\" من الخيارات من أ إلى د  ، وأجب باستخدام رسالةMr. Suzuki\" )  اختر البرنامج الذي يعرض2(\n(A)  print (name)\nname == 'Mr.Suzuki'\n(B)  print (name)\nname == \"Mr.Suzuki\"\n(C) name = 'Mr.Suzuki'\nprint (name)\n(D)  name == 'Mr.Suzuki'\nprint (name)\n.]5[ ] إلى1[ )  عند تنفيذ البرنامج التالي ، أعط نتائج العناصر من2(\n(a) = 6\nprint (a + 4)\n……[1]\nprint (a - 1)\n……[2]\nprint (a × 5)\n……[3]\nprint (a ÷ 2)\n……[4]\nprint (a ** 3)\n……[5]\nالشرح\nD ، ! اما تكون داخل \" او \" لذلكHelloWorld ) \u0007 \u0007يتم استخدام وظيفة الطباعة لعرض سالسل أو قيم األحرف ، وسلسلة األحرف1(\nC ، )  \"=\" يستخدم لتعيين قيمة لمتغير ما. باإلضافة إلى ذلك ، ال يمكن استخدام متغير قبل تعريفه. لذلك2(\n ، وهو ما يساوي1 - 6 ] ويكون2[  ؛10  ، وهو ما يساوي4 + 6  يكون ، [a]  مخصصة للمتغي6 )\u0007 بما أن القيمة3(\n.216  ، وهو ما يساوي3  أس6 ] ويكون5[  ؛ و3  ، وهو ما يساوي2 ÷ 6 ] ويكون4[  ؛30  ، وهو ما يساوي5 × 6 ] ويكون3[ ;5\n216 ]5[ ، 3 ]4[ ، 30 ]3[ ، 5 ]2[ ، 10 ]1[ لذلك ، فإن اإلجابات هي\nجرب بنفسك\n.(أ)جب عن األسئلة التالية\n.\" من الخيارات من أ إلى د ، وأجب باستخدام الحرفHello Samar\" )  اختر البرنامج الذي يعرض1(\nHello Samar )(أHello Samar  )(ب\n print(Hello Samar) )(جـprint('Hello Samar')  )(د\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\n(A)  HelloWorld! (B) 'HelloWorld!'\n(C)  print (HelloWorld!) (D)  print ('HelloWorld!')\n(A)  print (name) (B)  print (name)\nname == 'Mr.Suzuki' name == \"Mr.Suzuki\"\n(C) name = 'Mr.Suzuki' (D)  name == 'Mr.Suzuki'\nprint (name) print (name)\n(a) = 6\nprint (a + 4)\nprint (a - 1)\nprint (a ** 3)\n173",
+    "source_pages": [
+      172,
+      172
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-2_p173",
+    "topic": "variables and assignment",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "174\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات منCorrect\" )  اختر البرنامج الذي يعرض2(\n)A(\u0007 print(result)\nresult = 'Correct'\n)B(\u0007 print(result)\nresult == 'Correct'\n(C)  \u0007result = 'Correct'\nprint(result)\n(D)  \u0007result == 'Correct'\nprint(result)\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات من2\" ) اختر البرنامج الذي يعرض3(\n(A)  a = 20\nprint(a % 3)\n(B)  \u0007print(a % 3)\na = 20\n(C)  \u0007a = 20\nprint(a * 3)\n)D(\u0007print(a * 3)\na = 20\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات من81\" )  اختر البرنامج الذي يعرض4(\n(A)  \u0007b =9\nprint(b // 2)\n(B)  \u0007b ==9\nprint(b // 2)\n)C(\u0007b == 3\nprint(b ** 4)\n(D)  \u0007b = 3\nprint(b ** 4)\n.]5[ ] إلى1[ )  عند تنفيذ البرنامج التالي، أعطِ النتائج للعناصر من5(\nc = 5\nprint (c + 3)\n……[1]\nprint (c - 2)\n……[2]\nprint (c * 4)\n……[3]\nprint (c / 2)\n……[4]\nprint (c ** 2)\n……[5]\n ، D  إلىA )  \u0007ما هو المصطلح الذي يطلق على رمز مثل \"=\" المستخدم لتعيين قيمة لمتغير؟ اختر واحدًا من الخيارات من6(\n.وأجب باستخدام الحرف\nعامل مقارنة )2(\n\t\n\t\n\tعامل حسابي  )1(\nعامل منطقي )4(\n\t\n\t\n\tعامل تخصيص  )3(\nتمرين\n.أجب عن األسئلة التالية  1\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات منNice to meet you\" ) اختر البرنامج الذي يعرض1(\n(A)  print('Nice to meet you')\n(B)  print(Nice to meet you)\n(C)  'Nice to meet you'\n(D)  Nice to meet you\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات منyears old 17\" )  اختر البرنامج الذي يعرض2(\n(A)  \u0007print(age)\nage == '17 years old'\n(B)  \u0007print(age)\nage = '17 years old'\n(C)  \u0007age == '17 years old'\nprint(age)\n(D)  \u0007age = '17 years old'\nprint(age)\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nresult = 'Correct' result == 'Correct'\nprint(result) print(result)\n(A)  a = 20\nprint(a % 3) a = 20\nprint(a * 3) a = 20\nprint(b // 2) print(b // 2)\nprint(b ** 4) print(b ** 4)\nc = 5\nprint (c + 3)\nprint (c - 2)\nprint (c * 4)\nprint (c / 2)\nprint (c ** 2)\n(A)  print('Nice to meet you') (B)  print(Nice to meet you)\n(C)  'Nice to meet you' (D)  Nice to meet you\nage == '17 years old' age = '17 years old'\nprint(age) print(age)\n174",
+    "source_pages": [
+      173,
+      173
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-2_p174",
+    "topic": "variables and assignment",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "175\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات من15\" )  اختر البرنامج الذي يعرض3(\n(A)  \u0007a = 5\nprint(a % 3)\n(B)  \u0007print(a % 3)\na = 5\n(C)  \u0007a = 5\nprint(a * 3)\n(D)  \u0007print(a * 3)\na = 5\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات من2\" )  اختر البرنامج الذي يعرض4(\n(A)  \u0007b == 8\nprint(b // 3)\n(B)  \u0007b = 8\nprint(b // 3)\n(C)  \u0007b == 8\nprint(b ** 3)\n(D)  \u0007b = 8\nprint(b ** 3)\n.]5[ ] إلى1[ )  عند تنفيذ البرنامج التالي، أعطِ النتائج للعناصر من5(\nc = 9\nprint(c + 2)\n……[1]\nprint(c - 4)\n……[2]\nprint(c * 2)\n……[3]\nprint(c // 2)\n……[4]\nprint(c % 2)\n……[5]\n \" التي تستخدم في العمليات الحسابية؟ اختر واحدًا من-\" \" و+\" )  \u0007ما هو المصطلح الذي يطلق على رموز مثل6(\n.الخيارات من أ إلى ث ، وأجب باستخدام الحرف\nعامل منطقي ب\t\n\t\n\tعامل مقارنة  )(أ\nعامل حسابي د\t\n\t\n\tعامل تعيين  )(جـ\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nprint(a % 3) a = 5\nprint(a * 3) a = 5\nprint(b // 3) print(b // 3)\nprint(b ** 3) print(b ** 3)\nc = 9\nprint(c + 2)\nprint(c - 4)\nprint(c * 2)\nprint(c // 2)\nprint(c % 2)\n175",
+    "source_pages": [
+      174,
+      174
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-3_p175",
+    "topic": "loops and conditionals",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "دراسة المعلومات\n176\nالنقاط الرئيسية\n. هيكل الحلقة1﻿\n. \" كما هو موضحfor\" ) تنفيذ عملية بشكل متكرر. تتم كتابة عبارةfor( ) يتيح استخدام عبارة1(\nfor\n]variable\n]in\n]range([Variable range]):\n]]]][Process to repeat]\n. ، يتم تنفيذ األوامر البرمجية المسبوقة بمسافة بشكل متكرر)for( في عبارة\n.() لتحديد مدى التكرارrange  ) ، يمكن استخدامfor( )  في عبارة2(\n)Writing style( طريقة الكتابة)Meaning( المعنى\nrange(end value)\n ) وصوااًلً إلى0( ، بدءًا من1 تزداد قيمة المتغير بمقدار\n.)end value - 1(\nrange(start value, end value)\n )start value( ، بدءًا من1 تزداد قيمة المتغير بمقدار\n.)end value - 1( وصوااًلً إلى\nrange(start value, end value, increment)\n ) المحدد، بدءًا منincrement( تزداد قيمة المتغير بمقدار\n.)end value - increment( ) وصوااًلً إلىstart value(\n3  إلى0 <مثال> برنامج يعرض األعداد الصحيحة من\n01\nfor\n]i\n]in\n]range (0, 4):\n.3  إلى0  من1 \" بزيادةi\" كرر المتغير\n02\n]]]]print (i)\n.\"i\" يعرض قيمة المتغير\n5  إلى1 <مثال> برنامج يعرض أرقاما فردية من\n01\nfor\n]i\n]in\n]range(1, 7, 2):\nRepeat variable “i” increasing by 2 \nfrom 1 to 6.\n02\n]]]]print(i)\nDisplays the value of variable “i”.\n \nExecution result\n0\n1\n2\n3\nExecution result\n1\n3\n5\n]2[  أساسيات البرمجة3-12\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nrange([Variable range]):\nfor variable in\n[Process to repeat]\nrange(end value)\n.)end value - 1(\nrange(start value, end value)\nrange(start value, end value, increment)\nfor i in range (0, 4):\nprint (i)\nExecution result range(1, 7, 2):\nfor i in\nfrom 1 to 6.\nprint(i)\n176",
+    "source_pages": [
+      175,
+      175
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-3_p176",
+    "topic": "loops and conditionals",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "177\n. هيكل التفرع2﻿\n.) : عامل يستخدم لمقارنة التعبيرات أو القيمComparison operators-عامل المقارنة(  )1(\nComparison \noperator\nMeaning\nExample\nMeaning of the example\n==\n(10Equal) \nx == 70\nx is equal to 70\n! =\n(11Not equal) \nx ! = 70\nx is not equal to 70\n<\n(12Less than) \nx < 70\nx is less than 70\n>\n(13Greater than) \nx > 70\nx is greater than 70\n<=\n(14Less than or equal to) \nx <= 70\nx is less than or equal to 70\n>=\n(15Greater than or equal to) \nx >= 70\nx is greater than or equal to 70\n.) بتفرع الشروط ومعالجتها كتعبيرات شرطيةif(  استخدام عبارات )  يسمح2(\n ) : \u0007تعبير يحدد ما إذا كانت الشروط قد تم استيفاؤها وإرجاع \"صحيح\" إذاconditional expression -التعبير الشرطي(  \n  .تم استيفائه و \"خطأ\" إذا لم يكن كذلك\n.) يجعل من الممكن وصف العملية التي تحدث عند عدم استيفاء الشرطif ~ else( ]  \u0007استخدام1[\nif\n][Conditional expression]:\n   [Process  when a condition is true]\nelse:\n   [Process when a condition is false]\n<Example> Program for determining pass or fail\n01\nx = 70\nAssign the value 70 to variable x.\n02\nif\n]x >= 60:\nIf x is 60 or greater,\n03\n]]]]result = 'Pass'\nIf true, assign “Pass” to the variable result.\n04\nelse:\nIf not,\n05\n]]]]result = 'Fail'\nAssign “Fail” to the variable result.\n06\nprint(result)\nDisplays the value of the variable result.\nExecution result\nPass\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nComparison Meaning Example Meaning of the example\noperator\n== (10Equal) x == 70 x is equal to 70\n(11Not equal)\n! = x ! = 70 x is not equal to 70\n(12Less than)\n< x < 70 x is less than 70\n(13Greater than)\n> x > 70 x is greater than 70\n(14Less than or equal to)\n<= x <= 70 x is less than or equal to 70\n(15Greater than or equal to)\n>= x >= 70 x is greater than or equal to 70\nif [Conditional expression]:\n[Process  when a condition is true]\nelse:\n[Process when a condition is false]\n<Example> Program for determining pass or fail\nx = 70 Assign the value 70 to variable x.\nx >= 60: If x is 60 or greater,\nif\nPass\nresult = 'Pass'\nelse: If not,\nresult = 'Fail'\nprint(result) Displays the value of the variable result.\n177",
+    "source_pages": [
+      176,
+      176
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-3_p177",
+    "topic": "loops and conditionals",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "178\n.) يجعل من الممكن تحديد شروط متعددة بالتتابعif ~ elif ~ else( ]  \u0007استخدام2[\nif [Conditional expression 1]:\n]]]][Process when conditional expression 1 is true]\nelif [Conditional expression 2]:\n]]]][Process when conditional expression 1 is false and conditional expression 2 is true]\nelse:\n]]]][Process when both conditional expression 1 and conditional expression 2 are false]\n<Example> Program for evaluating based on test scores\n01\nx = 70\nAssign the value 70 to variable x.\n02\nif\n]x >= 90:\nIf x is 90 or greater,\n03\n]]]]result = 'Grade is A'\nIf true, assign “Grade is A” to the variable result.\n04\nelif\n]x >= 50:\nOtherwise, if x is 50 or greater,\n05\n]]]]result = 'Grade is B'\nAssign “Grade is B” to the variable result.\n06\nelse:\nIf none of the conditions are met,\n07\n]]]]result = 'Grade is C'\nAssign “Grade is C” to the variable result.\n08\nprint(result)\nDisplays the value of the variable result.\n\t\n\t\nGrade is B\nاختبر معلوماتك\n.أجب عن األسئلة التالية\n. ، وأجب باستخدام رسالةD  إلىA \" من الخيارات منGrade is A\" )\t اختر البرنامج الذي يعرض1(  )1(\nA\t point = 90\nif point >= 85:\n\t\nresult = 'Grade is A'\nelse:\n\t\nresult = 'Grade is B'\nB\t point = 90\nif point >= 85:\n\t\nresult = 'Grade is A'\nelse:\n\t\nresult = 'Grade is B'\nprint(result)\nC\t point 90\nif point >= 85:\n\t\nresult = 'Grade is A'\nelse:\n\t\nresult = 'Grade is B'\nprint(result)\nD\t point 90\nif point >= 85:\n\t\nresult = 'Grade is A'\nelse:\n\t\nresult = 'Grade is B'\nExecution result\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nif [Conditional expression 1]:\n[Process when conditional expression 1 is true]\nelif [Conditional expression 2]:\n[Process when conditional expression 1 is false and conditional expression 2 is true]\nelse:\n[Process when both conditional expression 1 and conditional expression 2 are false]\n<Example> Program for evaluating based on test scores\nx = 70 Assign the value 70 to variable x.\nif x >= 90: If x is 90 or greater,\nresult = 'Grade is A'\nx >= 50: Otherwise, if x is 50 or greater,\nelif\nresult = 'Grade is B'\nelse: If none of the conditions are met,\nresult = 'Grade is C'\nprint(result) Displays the value of the variable result.\nGrade is B\nA\t point = 90 B\t point = 90\nif point >= 85: if point >= 85:\nresult = 'Grade is A' result = 'Grade is A'\nelse: else:\nresult = 'Grade is B' result = 'Grade is B'\nprint(result)\nC\t point 90 D\t point 90\nif point >= 85: if point >= 85:\nresult = 'Grade is A' result = 'Grade is A'\nelse: else:\nresult = 'Grade is B' result = 'Grade is B'\nprint(result)\n178",
+    "source_pages": [
+      177,
+      177
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-3_p178",
+    "topic": "loops and conditionals",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "179\n  مع األحرف أو األرقامC  إلىA . امأل الفراغات10  إلى1 )  \u0007يعرض البرنامج التالي إجمالي ومتوسط جميع األعداد الصحيحة من2(\n.المناسبة إلكمال البرنامج\ntotal = 0\nfor i in range(1, \nA\n ):\n\t\ntotal = \nB\naverage = \nC\n /10\nprint(total)\nprint(average)\nالشرح\nB ، \". لذلكresult\" \" ، ووظيفة الطباعة مطلوبة لعرض قيمة المتغيرpoint\" )  \"=\" مطلوب لتعيين قيمة للمتغير1(\n 10  إلى1  ثم احسب اإلجمالي عن طريق إضافة أعداد صحيحة باستمرار من0 )  \u0007اضبط المتغير \"اإلجمالي\" على قيمة أولية قدرها2(\n total ، . لذلك11 ،  ، تأكد من تحديد ما يصل إلى الرقم التالي10  إلى1 \". عند عد المتغيرات منtotal\" \" إلى المتغيرi\" كمتغير\n:C ,i + total :B , 11 :A\nجرب بنفسك\n.أجب عن األسئلة التالية\n. ، وأجب باستخدام الحرفD  إلىA )  اختر نتيجة التنفيذ المناسبة عند تنفيذ البرنامج التالي من الخيارات من1(\nfor i in range(0, 5, 1):\n     print(i)\nA\n0\nB\n0\nC\n1\nD\n1\n1\n1\n2\n2\n2\n2\n3\n3\n3\n3\n4\n4\n4\n4\n5\n5\n. ، وأجب باستخدام الحرفD  إلىA \" من الخيارات منPass\" )  اختر البرنامج الذي يعرض2(\nA\t score 95\nif score < 90:\n\t\nresult = 'Fail'\nelse:\n\t\nresult = 'Pass'\nprint(result)\nB\t score 95\nif score < 90:\n\t\nresult = 'Fail'\nelse:\n\t\nresult = 'Pass'\nC\t score = 95\nif score < 90:\n\t\nresult = 'Fail'\nelse:\n\t\nresult = 'Pass'\nD\t score = 95\nif score < 90:\n\t\nresult = 'Fail'\nelse:\n\t\nresult = 'Pass'\nprint(result)\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\ntotal = 0\nfor i in range(1, A ):\ntotal = B\naverage = /10\nC\nprint(total)\nprint(average)\n:C ,i + total :B , 11 :A\nA B C D\nfor i in range(0, 5, 1):\nprint(i)\nA\t score 95 B\t score 95\nif score < 90: if score < 90:\nresult = 'Fail' result = 'Fail'\nelse: else:\nresult = 'Pass' result = 'Pass'\nprint(result)\nC\t score = 95 D\t score = 95\nif score < 90: if score < 90:\nresult = 'Fail' result = 'Fail'\nelse: else:\nresult = 'Pass' result = 'Pass'\nprint(result)\n179",
+    "source_pages": [
+      178,
+      178
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-3_p179",
+    "topic": "loops and conditionals",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "180\n  باألحرف أوC  إلىA !\". امأل الفراغاتStart\" ، يعرض0 ، وعندما يصل إلى0  إلى5 )  \u0007البرنامج التالي يعد تنازليًا من3(\nاألرقام المناسبة إلكمال البرنامج\nfor i in \nA\n:\n\t\ncount = \nB\n\t\nif \nC\n:\n\t\n\t\nprint('Start!')\n\t\nelse:\n\t\n\t\nprint(count)\n  باألحرف أوB  وA . امأل الفراغات100  إلى1 \" لألرقام الزوجية منIt is an even number\" )  \u0007البرنامج التالي يعرض4(\n.األرقام المناسبة إلكمال البرنامج\nfor i in range(1, \nA\n):\n\t\nif \nB\n:\n\t\n\t\nprint('It is an even \nnumber')\n\t\nelse:\n\t\n\t\nprint(i)\nتمرين\n.األسئلة التالية أجب عن 1\n  ، وأجب باستخدامD  إلىA )  \u0007اختر البرنامج الذي ينتج نفس نتيجة التنفيذ مثل البرنامج التالي من الخيارات من1(\n.الحرف\nfor i in range(3):\n\t\nprint(i)\nA\t for i in range(0, 3):\n\t\nprint(3)\nB\t for i in range(0, 3, 1):\n\t\nprint(i)\nC\t for i in range(0, 3, 1):\n\t\nprint(3)\nD\t for i in range(0, 3, 2):\n\t\nprint(i)\n. ، وأجب باستخدام الحرفC  إلىA )  اختر نتيجة التنفيذ المناسبة عند تنفيذ البرنامج التالي من الخيارات من2(\nx = 7\nif x < 3:\n\t\nprint('We will seat you at the counter')\nelif x <= 10:\n\t\nprint('We will seat you at a table')\nelse:\n\t\nprint('No seats are available')\nA\tWe will seat you at the counter\nB\tWe will seat you at a table\nC\tNo seats are available\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nfor i in :\nA\ncount = B\nif :\nC\nprint('Start!')\nelse:\nprint(count)\nfor i in range(1, ):\nA\nif :\nB\nprint('It is an even\nnumber')\nelse:\nprint(i)\nfor i in range(3):\nprint(i)\nA\t for i in range(0, 3): B\t for i in range(0, 3, 1):\nprint(3) print(i)\nC\t for i in range(0, 3, 1): D\t for i in range(0, 3, 2):\nprint(3) print(i)\nx = 7\nif x < 3:\nprint('We will seat you at the counter')\nelif x <= 10:\nprint('We will seat you at a table')\nelse:\nprint('No seats are available')\nA\tWe will seat you at the counter\nB\tWe will seat you at a table\nC\tNo seats are available\n180",
+    "source_pages": [
+      179,
+      179
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-3_p180",
+    "topic": "loops and conditionals",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "181\n  باألحرف أوB  وA . امأل الفراغين100  إلى1 )  \u0007البرنامج التالي يعرض المجموع الكلي لجميع األرقام من3(\n.األرقام المناسبة إلكمال البرنامج\ntotal = 0\nfor i in range(1, \nA\n ):\n\t\ntotal = \nB\nprint(total)\n  باألحرف أو األرقام المناسبةC  إلىA . امأل الفراغات10  و1 )  \u0007البرنامج التالي يعرض عدد األرقام الزوجية بين4(\n.إلكمال البرنامج\nfor i in \nA\n:\n\t\nif i % 2 == 0:\n\t\n\t\ncount = count + \nB\nprint( \nC  )\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\ntotal = 0\nfor i in range(1, A ):\ntotal =\nB\nprint(total)\nfor i in :\nA\nif i % 2 == 0:\ncount = count +\nB\nprint( C  )\n181",
+    "source_pages": [
+      180,
+      180
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-4_p181",
+    "topic": "lists",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "دراسة المعلومات\n182\nالنقاط الرئيسية\n معالجة األخطاء\n)القائمة (قائمة\n.) : مجموعة من عناصر البيانات مرتبة بالتسلسل. يمكن إدارة البيانات بشكل جماعيArray (list((  )1(\nArray declaration\nArray name = [data0, data1, data2, …]\nAdding elements to the end of an array\nArray name.append(data)\n<Example> Character string array\nweek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']\n　　　　　\nArray of numbers\nnumber = [7, 22, 11, 34, 17]\n ))(أرقام العناصرindex( ) : \u0007كل قيمة مضمنة في مصفوفة. يعرض اسم الصفيف ورقم مكانه يتيح استخدامElement(  )2(\n .)40(  ، ولكن من1  ال تبدأ منindex استرداد العناصر من مصفوفة. الحظ أن\n.)  عملية القائمة : يسمح بإدارة عنصر القائمة باستخدام خط سفلي واحد3(\n ] يجعل من الممكن تحديدi[ <مثال> تعريف القائمة وطريقة الوصول إلى العناصر استخدام متغير كخط سفلي مثل في\n.\"for\" العناصر مع المتغير. هذا مناسب عند معالجة العناصر واحدة تلو األخرى باستخدام عبارة\n01\na = [7, 22, 11, 34, 17]\nDeclares array “a” and assigns a numerical \nvalue to it.\n02\nfor\n]i\n]in\n]range(0,5,1):\nRepeats while increasing variable i from 0 \nto (54) in increments of 1.\n03\n]]]]print(a[i])\nDisplays elements from array “a” that \nsatisfy the condition (6a[i]).\n<Example> Adding an element to the end of a one-dimensional array\n01\na = [ ]\nDeclares the array “a”.\n02\na.append(1)\nAdds (71) to the end of array “a”.\n03\na.append(4)\nAdds (84) to the end of array “a”.\n04\na.append(9)\nAdds (99) to the end of the array “a”.\n05\nprint(a)\nDisplays the values for array “a”\n مصفوفة ثنائية األبعاد) :\u0007 مصفوفة تدير البيانات باستخدام األحرف السفلية في كل من الصف والعمود اتجاهات. سيتم(  )4(\na[i][j \" باستخدام االثنين يكتب على النحو التاليj\" \" والعمودi\" تحديد ع نصر في الصف\nExecution result\n7\n22\n11\n34\n17\nExecution result\n[1, 4, 9]\n]1[  البرمجة التطبيقية4-12\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nArray declaration\nAdding elements to the end of an array Array name.append(data)\n<Example> Character string array week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']\nArray of numbers number = [7, 22, 11, 34, 17]\na = [7, 22, 11, 34, 17]\nvalue to it.\nRepeats while increasing variable i from 0\nrange(0,5,1):\nfor i in\nto (54) in increments of 1.\nprint(a[i])\nsatisfy the condition (6a[i]).\n<Example> Adding an element to the end of a one-dimensional array\na = [ ]\n[1, 4, 9]\na.append(1)\na.append(4)\na.append(9)\nprint(a)\n182",
+    "source_pages": [
+      181,
+      181
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-4_p182",
+    "topic": "lists",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "183\n<مثال> تعريف القائمة ثنائية األبعاد وطريقة الوصول إلى العناصر\n01\na=\u0007 [['A', 'B', 'C'],\n['D', 'E', 'F'],]\nDeclares array “a” and assigns a character string \nto it.\n02\nprint(a[0][0])\nDisplays the value for (11a[0][0]).\n03\nprint(a[1][2])\nDisplays the value for (12a[1][2]).\nاختبر معلوماتك\n.أجب عن األسئلة التالية\n.  ، أعط القيم المعروضة عند تنفيذ كل منهماB  وA )  بالنسبة للبرنامجين1(\nA\t a = [57, 16, 29, 44]\nprint(a[2])\nB\t a = \u0007[[1, 2, 3],\n[4, 5, 6], \n[7, 8, 9]]\n\t\nprint(a[2][1])\n B  وA \". امأل الفراغاتa\" )  \u0007تم تصميم البرنامج التالي للعثور على الحد األدنى للقيمة بين العناصر الموجودة في القائمة2(\n.مع األحرف أو األرقام المناسبة إلكمال البرنامج\na = [34, 52, 11, 40, 17]\nmin = a[0]\nfor i in range(1, \nA\n, 1):\n\t\nif a[i] < min:\n\t\n\t\nmin = \nB\nprint(min)\n  في البرنامج التالي باألحرف أو األرقام المناسبة ألكمال البرنامج بحيث يعرض \"نتيجةE  إلىA )  \u0007امأل الفراغات من3(\n.التنفيذ\" كما هو موضح\na = \u0007[['A', 'B', 'C', 'D'], \n  ['E', 'F', 'G', 'H']]\nfor i in range(\nA\n, \nB\n, 1):\n\t\nfor j in range(\nC\n, \nD\n, \n1):\n\t\n\t\nprint(\nE\n)\t\nExecution result\nA\nF\nExecution result\nA\nB\nC\n(Omitted)\nH\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\n['D', 'E', 'F'],] to it.\nA\nDisplays the value for (11a[0][0]).\nprint(a[0][0])\nF\nDisplays the value for (12a[1][2]).\nprint(a[1][2])\nA\t a = [57, 16, 29, 44]\nprint(a[2]) [4, 5, 6],\n[7, 8, 9]]\nprint(a[2][1])\na = [34, 52, 11, 40, 17]\nmin = a[0]\nfor i in range(1, , 1):\nA\nif a[i] < min:\nmin =\nB\nprint(min)\n['E', 'F', 'G', 'H']]\nA\nfor i in range( , , 1):\nA B\nB\nfor j in range( C , D ,\nC\n1):\n(Omitted)\nprint( E )\nH\n183",
+    "source_pages": [
+      182,
+      182
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-4_p183",
+    "topic": "lists",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "184\nالشرح\n . باإلضافة إلى ذلك ، يمكن أن يكون عنصر في مصفوفة ثنائية األبعاد يتم1  ، وليس0  للمصفوفات تبدأ منindex )  \u0007الحظ أن1(\nA: 29 ، B: 8 ، \" يشير إلى العمود. لذلكj\" \" إلى الصف وi\" ] ، حيث يشيرa [i] [j تمثيله ك\n \"a\" ]. بعد ذلك ، افحص كل منها من القائمةa [0 \" بحيث يكونa\" \" كمتغير يخزن الحد األدنى لقيمة القائمةmin\" )  \u0007قم بتعيين2(\n.]A: 5 ، B: a [i ،  إلى تلك القيمة. لذلكmin  ، فقم بتحديثmin ] أصغر منa [i بالتتابع ، وإذا كان\n]ب: أ[ط ،5 :أ ،لذلك\nA: 0 ، B: 2 ، C: 0 ، D: 4 ، E: a [i] [j]  )3(\nجرب بنفسك\n.(أ)جب عن األسئلة التالية\n. ، أعطِ القيم المعروضة عند تنفيذ كل منهاC  إلىA )  بالنسبة للبرامج من1(\nA\t a = [1, 4, 9, 16, 25]\n\t\nprint(a[3])\nB\t a = [ ]\na.append(8)\na.append(28)\nprint(a[1])\nC\t a = \u0007[['A', 'B', 'C', 'D', 'E'], \n['F', 'G', 'H', 'I', 'J'], \n['K', 'L', 'M', 'N', 'O']]\n\t\nprint(a[2][1])\n  باألحرف أو األرقام المناسبة إلكمالC  إلىA \". امأل الفراغاتa\" )  \u0007البرنامج التالي يجد مجموع العناصر في مصفوفة2(\n.البرنامج\na = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nsum = 0\nfor i in range(\nA\n, \nB\n, 1):\n\t\nsum = sum + \nC\nprint(sum)\n  باألحرف أو األرقام المناسبةC  إلىA \". امأل الفراغاتa\" )  \u0007البرنامج التالي يجد القيمة القصوى بين العناصر في مصفوفة3(\n.إلكمال البرنامج\na = [7, 22, 11, 34, 17]\nmax = 0\nfor i in range(0, \nA\n, 1):\n\t\nif a[i] \nB\n max:\n\t\n\t\nmax = \nC\nprint(max)\n  في البرنامج التالي باألحرف أو األرقام المناسبة إلكمال البرنامج بحيث يعرض \"نتيجة التنفيذ\" كماE  إلىA )  \u0007امأل الفراغات4(\n.هو موضح\na = \u0007[['A', 'B', 'C', 'D', 'E'], \n  ['F', 'G', 'H', 'I', 'J']]\nfor i in range(\nA\n, \nB\n, 1):\n\t\nfor j in range(\nC\n, \nD\n, 1):\n\t\n\t\nprint(\nE\n)\t\nExecution result\nA\nB\nC\n(Omitted)\nJ\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nA\t a = [1, 4, 9, 16, 25] B\t a = [ ]\nprint(a[3]) a.append(8)\na.append(28)\nprint(a[1])\n['F', 'G', 'H', 'I', 'J'],\n['K', 'L', 'M', 'N', 'O']]\nprint(a[2][1])\na = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nsum = 0\nfor i in range( , , 1):\nA B\nsum = sum + C\nprint(sum)\na = [7, 22, 11, 34, 17]\nmax = 0\nfor i in range(0, A , 1):\nif a[i] max:\nB\nmax =\nC\nprint(max)\n['F', 'G', 'H', 'I', 'J']]\nA\nfor i in range( , , 1):\nA B B\nfor j in range( C , D , 1):\nC\nprint( )\nE (Omitted)\nJ\n184",
+    "source_pages": [
+      183,
+      183
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-4_p184",
+    "topic": "lists",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "185\nتمرين\n.أجب عن األسئلة التالية 1\n. ، أعطِ القيم المعروضة عند تنفيذ كل منهاC  إلىA )  بالنسبة للبرامج من1(\nA\t a = [0, 1, 2, 3]\nprint(a[1])\nB\t a = ['A']\na.append('B')\na.append('C')\nprint(a[1])\nC\t a = \u0007[['Japanese', 'Mathematics', 'English'], \n['Social studies', 'Science', 'Information \nstudies']]\n\t\nprint(a[1][2])\n  باألحرف أوC  إلىA \". امأل الفراغاتa\" )  ا\u0007لبرنامج التالي مصمم إليجاد القيمة الدنيا بين العناصر في مصفوفة2(\n.األرقام المناسبة إلكمال البرنامج\na = [24, 43, 9, 25, 17]\nmin = \nA\nfor i in range(0, \nB\n, 1):\n\t\nif a[i] < min:\n\t\n\t\nmin = \nC\nprint(min)\n  باألحرف أوC  إلىA . امأل الفراغات10 \" التي تزيد عنa\" )  \u0007البرنامج التالي يعد عدد العناصر في مصفوفة3(\n.األرقام المناسبة إلكمال البرنامج\na = [12, 8, 9, 13, 11]\ncount = 0\nfor i in range(\nA\n, \nB\n, 1):\n\t\nif \nC\n > 10:\n\t\n\t\ncount = count + 1\nprint(count)\n  في البرنامج التالي باألحرف أو األرقام المناسبة إلكمال البرنامج بحيث يعرض \"نتيجةE  إلىA )  \u0007امأل الفراغات4(\n.التنفيذ\" كما هو موضح\na = \u0007[['Japanese', 'Mathematics', 'English'], \n  ['Social studies', 'Science', 'Information studies']]\nfor i in range(\nA\n, \nB\n, 1): \n\t\nfor j in range(\nC\n, \nD\n, 1): \n\t\n\t\nprint(\nE\n)\nExecution result\nJapanese\nMathematics\nEnglish\nSocial studies\nScience\nInformation studies\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nA\t a = [0, 1, 2, 3] B\t a = ['A']\nprint(a[1]) a.append('B')\na.append('C')\nprint(a[1])\n['Social studies', 'Science', 'Information\nstudies']]\nprint(a[1][2])\na = [24, 43, 9, 25, 17]\nmin = A\nfor i in range(0, , 1):\nB\nif a[i] < min:\nmin =\nC\nprint(min)\na = [12, 8, 9, 13, 11]\ncount = 0\nfor i in range( A , B , 1):\nif > 10:\nC\ncount = count + 1\nprint(count)\n['Social studies', 'Science', 'Information studies']] Japanese\nfor i in range( A , B , 1): Mathematics\nfor j in range( C , D , 1): English\nprint( ) Social studies\nE\nScience\nInformation studies\n185",
+    "source_pages": [
+      184,
+      184
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-5_p185",
+    "topic": "functions",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "دراسة المعلومات\n186\nالنقاط الرئيسية\n. هياكل البيانات1﻿\n ) : مجموعة من العمليات التي يقوم بها جهاز كمبيوتر يوصف بأنها وحدة متماسكة. المتغير المحددFunction - الدالة(\u0007  )1(\n ) يجعل من الممكن تمرير القيمة الناتجة عن العمليةreturn( ). استخدامargument(  ليستقبل قيمة داخل دالة يعرف باسم\n ). باإلضافة إلى ذلك ، عند استخدام دالة، من الضروري إجراءe\nreturn value  قيمة إرجاع( داخل الدالة إلى المتصل ك\n.عملية استدعاء للدالة\ndef [function name] (Argument 1, Argument 2, …):\n   [Process]\n   return [return value]\nArgument\nFunction name (Argument 1,\nArgument 2, …)\nFunction Call\nReturn value\nDefinition of a\nFunction\ny = 2x <مثال> مثال على دالة ذات وسيطة واحدة: برنامج للعثور على الدالة\n01\ndef function(x):\nDefines a function called (6function).\n02\ny = 2 * x\nAssigns the value from 2*x to variable \n“y”.\n03\nreturn y\nReturns “y” as (7return value).\n04\nprint(function(5))\nPasses “x” as 5 to the function.\n<Example> Example of a function with two arguments: A program to find the area of a triangle\n01\ndef area(base, height):\nDefines a function called “area”.\n02\nS\t\n= base*height/2\nAssigns the value from “base*height/2” \nto variable “S”.\n03\nreturn S\nReturns “S” as the return value.\n04\nprint(area(10, 5))\nPasses “base” as (810) and “height” as \n(95) to the function “area”.\n \" التي يمكن استخدامها بدون تعريف ، وprint )(\" ) مثلbuilt in function دوال مدمجة( )  \u0007تشمل الدوال2(\n.دوال معرفة من قبل المستخدم) يمكنك تحديدها(\nExecution result\n10\nExecution result\n25\n]2[   البرمجة التطبيقية5-12\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nDefinition of a\nFunction\n[Process]\nreturn [return value]\nArgument Return value\nFunction Call\nFunction name (Argument 1,\nDefines a function called (6function).\ndef function(x):\nAssigns the value from 2*x to variable\ny = 2 * x\nreturn y\nprint(function(5))\n<Example> Example of a function with two arguments: A program to find the area of a triangle\ndef area(base, height):\nS = base*height/2\nreturn S\nprint(area(10, 5))\n186",
+    "source_pages": [
+      185,
+      185
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-5_p186",
+    "topic": "functions",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "187\nاختبر معلوماتك\n.أجب عن األسئلة التالية\n .B  وA )  \u0007في البرنامج التالي ، يتم استخدام وظيفة \"الدائرة\" لحساب مساحة الدائرة. أعط البرنامج التي تتناسب مع الفراغات1(\n.]1[ أيضا ، قم بإعطاء القيمة المعروضة عند تنفيذ الصف\nA\n circle(r):\n\t\nS = r * r * 3.14\n\t\nB\n S\na = circle(5)\nprint(a) # [1]\n \" أو أعلى ، و \"الفشل80 )  \u0007في البرنامج التالي ، تأخذ الدالة \"القاضي\" درجة االختبار كوسيطة وتعرض \"نجاح\" إذا النتيجة2(\n.B  وA . أعط البرنامج الذي يناسب الفراغات80 إذا كانت أقل من\ndef judge(score):\n\t\nif score \nA\n 80:\n\t\n\t\nprint('Pass')\n\t\nB\n:\n\t\n\t\nprint('Fail')\njudge(40)\nالشرح\n. )  في البرمجة ، يتم تعريف الوظيفة كما هو موضح1(\ndef function name(argument):\n\t\n[Process]\n\t\nreturn [return value]\n. هي كما يليB  وA لذلك ، فإن البرامج التي تتناسب مع الفراغات\nreturn :B ، ,def :A\n \" في الدالة \"دائرة\". لذلك ، عندr\"  كوسيطة5 ] ، يتم تمرير1[ \" فيcircle\" (ب)\u0007باإلضافة إلى ذلك ، عندما يتم استدعاء الدالة\n.78.5  ، لذلك يتم عرض78.5 = 3.14 × 5 × 5 ] ، يكون1[ تنفيذ الصف\n. )  في البرمجة ، تم تحديد فرع مشروط كما هو موضح2(\nif conditional expression:\n\t\n[Process when a condition is true]\nelse:\n\t\n[Process when a condition is false]\nTherefore, the programs that fit in blanks A and B are as follows.\nA: >=, B: else\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nA circle(r):\nS = r * r * 3.14\nB S\na = circle(5)\ndef judge(score):\nif score 80:\nA\nprint('Pass')\n:\nB\nprint('Fail')\njudge(40)\ndef function name(argument):\n[Process]\nreturn [return value]\nif conditional expression:\n[Process when a condition is true]\nelse:\n[Process when a condition is false]\nTherefore, the programs that fit in blanks A and B are as follows.\nA: >=, B: else\n187",
+    "source_pages": [
+      186,
+      186
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-5_p187",
+    "topic": "functions",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "188\nجرب بنفسك\n.أجب عن األسئلة  التالية\n. ] من الخيارات من أ إلى ث2[ ] و1[ )  اختر المصطلح الذي يناسب الفراغين1(\ndef function name ( [1] ):\n\t\n[Process]\n\t\nreturn [2]\nوسيطة  )(أ\nقيمة اإلرجاع  )(ب\nمكمل  )(جـ\nرقم عشوائي  )(د\n . أيضًا، أعطِ القيمB  وA \" لحساب مساحة المثلث. أعطِ البرنامج الذي يناسب الفراغينarea\" )  \u0007في البرنامج التالي، تُستخدم الدالة2(\n.]2[ ] و1[ المعروضة عند تنفيذ الصفين\ndef area(base, height):\n\t\nS = \nA\n\t\nB\n S\na = area(10, 5)\nb = area(6, 7)\nprint(a) # [1]\nprint(b) # [2]\n \" بتحويل درجات الحرارة من مئوية إلى فهرنهايت. أعطِ البرنامج الذيcelsius_to_fahrenheit\" )  \u0007في البرنامج التالي، تقوم الدالة3(\n.B  وA يناسب الفراغين\ndef celsius_to_fahrenheit(celsius):\n\t\nfahrenheit = (celsius * 9/5) + 32\n\t\nreturn \nA\ntemp_celsius = 25\nresult = celsius_to_fahrenheit(\nB\n)\nprint(result)\n .\"evaluate\" )  \u0007في البرنامج التالي، تُعطى درجات االختبار كوسائط للدالة4(\n باإلضافة إلى ذلك، العالقة بين الدرجات والتقديرات هي وفقًا للجدول\n.C  إلىA على اليمين. أعطِ البرنامج الذي يناسب الفراغات\ndef evaluate(score):\n\t\nif score \nA\n 80:\n\t\n\t\nprint('A')\n\t\nB\n score \nC\n 50:\n\t\n\t\nprint('B')\n\t\nelse:\n\t\n\t\nprint('C')\nevaluate(40)\nScore\nGrade\n80 or higher\nA\n50 or higher but less than 80\nB\nLess than 50\nC\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\ndef function name ( [1] ):\n[Process]\nreturn [2]\ndef area(base, height):\nS =\nA\nB S\na = area(10, 5)\nb = area(6, 7)\ndef celsius_to_fahrenheit(celsius):\nfahrenheit = (celsius * 9/5) + 32\nreturn\nA\ntemp_celsius = 25\nresult = celsius_to_fahrenheit( )\nB\nprint(result)\nScore Grade\n80 or higher A\n50 or higher but less than 80 B\nLess than 50 C\ndef evaluate(score):\nif score A 80:\nprint('A')\nB score C 50:\nprint('B')\nelse:\nprint('C')\nevaluate(40)\n188",
+    "source_pages": [
+      187,
+      187
+    ]
+  },
+  {
+    "chunk_id": "ar_ch12_12-5_p188",
+    "topic": "functions",
+    "language": "ar",
+    "chunk_type": "code_block",
+    "text": "189\nتمرين\n.أجب عن األسئلة التالية  1\n.B  وA \" رقمين معًا. أعطِ البرنامج الذي يناسب الفراغينadd_number\" )  في البرنامج التالي، تضيف الدالة1(\nA\n add_numbers(a, b):\n\t\nreturn \nB\nresult = add_numbers(3, 5)\nprint(result)\n A \" لحساب مساحة شكل رباعي. أعطِ البرنامج الذي يناسب الفراغينarea\" )  \u0007في البرنامج التالي، تُستخدم الدالة2(\n.]2[ ] و1[ . أيضًا، أعطِ القيم المعروضة عند تنفيذ الصفينB و\ndef area(width, height):\n\t\nS = \nA\n\t\nB\n S\na = area(10, 6)\nb = area(7, 5)\nprint(a) # [1]\nprint(b) # [2]\n )  \u0007في البرنامج التالي، يُعطى وزن البيضة كوسيط للدالة3(\n \". باإلضافة إلى ذلك، العالقة بين وزن البيضةcheck_size\"\n وحجمها هي وفقًا للجدول على اليمين. أعطِ البرنامج الذي\nB  وA يناسب الفراغين\ndef check_size(weight):\n\t\nif weight < 45:\n\t\n\t\nprint('S')\n\t\nelif weight \nA\n 55:\n\t\n\t\nprint('M')\n\t\n\t\nB\n:\n\t\n\t\nprint('L')\ncheck_size(40)\n()\"؟print\" )  ما هو المصطلح الذي يطلق على دالة تُوفر كميزة قياسية للغة البرمجة مثل4(\nEgg weight\nSize\nLess than 45 g\nS\n45 g or higher but less than 55 \ng\nM\n55 g or higher\nL\nالفهرس\n\n--- reconstructed code (verify against source PDF) ---\nadd_numbers(a, b):\nA\nreturn B\nresult = add_numbers(3, 5)\nprint(result)\ndef area(width, height):\nS = A\nS\nB\na = area(10, 6)\nb = area(7, 5)\nEgg weight Size\nLess than 45 g\nS\n45 g or higher but less than 55\nM\ng\n55 g or higher\nL\ndef check_size(weight):\nif weight < 45:\nprint('S')\nelif weight A 55:\nprint('M')\nB :\nprint('L')\ncheck_size(40)\n189",
+    "source_pages": [
+      188,
+      188
+    ]
+  }
+]

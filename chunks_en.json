@@ -1,0 +1,222 @@
+[
+  {
+    "chunk_id": "en_ch12_12-1_p154",
+    "topic": "algorithm",
+    "language": "en",
+    "chunk_type": "algorithm",
+    "text": "155\nInformation Study\nPoint!\n12-1\nAlgorithm\nAlgorithm\n(1)\t (1Algorithm) : \u0007A method or procedure for solving a particular problem. \n(2)\t Flowcharts and activity diagrams : \u0007Diagrams that represent algorithms in a visual and comprehensive way.\n\t\n[1]\t (2Flowchart) : \u0007Method for illustrating the flow of a single process.\n\t\n\t <List of Flowchart Symbols>\nSymbol\nName\nMeaning\n(3Terminal)\nStart/End\n(4Display)\nDisplay on a screen, etc.\n(5Data)\nData input and output\n(6Process)\nOperations and other \nprocesses\n(7\u0007Conditional \nbranch)\nBranching according to \nconditions\n(8Repeat)\nStart of a repetition\nEnd of a repetition\n(9Line)\nFlow of data and control\n\t\n[2]\t (10Activity diagram) : \u0007Suitable method for representing parallel process flows.\n\t\n\t<List of Symbols in Activity Diagrams>\nSymbol\nName\n(11Start) \n(12End) \n(13Control) \n(14Transition) \n(15Conditional branch) \n(16Parallel process) \n(17Send) \nControl Structure\nAlgorithms can essentially be represented using three control structures along with input/output.\n(18Sequential structure)\n(19Repeating structure)\n(20Branching structure)\nExecutes \nprocesses \naccording to \nthe order.\nStart\nProcess 1\nProcess 2\nEnd\nRepeats \nthe process \nwhile the \nconditions \nare met.\nLoop condition\nProcess 1\nLoop\nSeparates \nprocesses \naccording \nto the \nconditions.\nProcess 1\nCondition\nNo\nYes\nProcess 2\n1\nFigure 1: Process flow from waking up to leaving\nWake up in the morning\nIs it sunny?\nLeave\nBring an umbrella\nNo\nYes\nCustomer\nATM\nInsert card and\nenter PIN\nConfirm withdrawal\namount\nDetermine\nwithdrawal\nInput withdrawal\namount\nWithdraw cash\nFigure 2: Cash withdrawal process at an ATM\n2",
+    "source_pages": [
+      154,
+      154
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-1_p155",
+    "topic": "algorithm",
+    "language": "en",
+    "chunk_type": "algorithm",
+    "text": "156\nWarm Up\nAnswer the following questions.\n(1)\t What is the term for describing the order of calculations or the sequence in which things are created?\n(2)\t What is the term for a diagram that visually represents an algorithm and is ideal for showing the flow of \nparallel processes?\n(3)\t The diagram on the right is a flowchart for pedestrians indicating \n“Proceed if the signal is green; otherwise, stop.” Choose the appropriate \noption that best fits into the blanks [1] to [3] from the options A to F \nbelow, and answer using the letters.\nA\t\nThe signal is red\t\n\t\nB  Signal is yellow\nC\t\nThe signal is not red\t\n\t\nD  The signal is not green\nE\t\nPossible to proceed\t\n\t\nF  Stop\n(4)\t What is the term for a control structure like (3)?\n(5)\t What is the programming language that is used in fields like artificial \nintelligence and statistics, and can be executed with minimal description?\nExplanation\n(1)\t Algorithm\n(2)\t Activity diagram\n(3)\t [1] A    [2] F    [3] E\n(4)\t Branching structure\n(5)\t Python\nNo\nYes\n[2]\n[3]\n[1]\nProgramming Language\n(1)   (21Programming language) : \u0007A language used for expressing algorithms in a way that can be \nunderstood by a computer.\n\t\n\t\n・\t\u0007Creating a program (source code) using a programming language is referred to as \n(22programming).\n\t\n\t\n・\t\u0007Programs are written using programming languages and then translated into \na (23machine language) that can be understood by a computer.\n(2)\t\nExamples of Programming Languages\n[1]  (24Python) : \u0007Language used in fields such as artificial intelligence (AI) and statistics, and can \nbe executed with minimal coding.\n[2]  (25JavaScript) : \u0007Language that can be confirmed only within a web browser, making it optimal \nfor web-related purposes.\n[3]  (26Scratch) : \u0007A visual programming language developed for educational purposes. Programming \nis possible using blocks, which is intuitive and easy to understand.\n3",
+    "source_pages": [
+      155,
+      155
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-1_p156",
+    "topic": "algorithm",
+    "language": "en",
+    "chunk_type": "algorithm",
+    "text": "157\nAnswer the following questions.\n(1)\t Choose the one that best fits into the blanks [1] to [4] in the following sentences from the options A to F below, \nand answer using the letters.\n  A method or procedure for solving a particular problem is referred to as an (  [1]  ). A language created to \ninstruct a computer to execute an ([1]) is called (  [2]  ), and creating a program using a ([2]) is called \n(  [3]  ). In addition, a ([2]) is converted to a (  [4]  ) that can be understood by a computer, and \nultimately becomes a set of instructions composed of combinations of 0s and 1s.\nA  Program\t\nB  Flowchart\t\nC  Algorithm\nD  Programming\t\nE  Programming language\t\nF  Machine language\n(2)\t The following table summarizes the symbols used in flowcharts. Choose the option that best fits into the blanks \n[1] to [8] from the options A to H below, and answer using the letters.\nSymbol\nName\nMeaning\nTerminal\n(  [1]  )\nDisplay\n(  [2]  )\nData\n(  [3]  )\nProcess\n(  [4]  )\nConditional branch\n(  [5]  )\nRepetition\n(  [6]  )\n(  [7]  )\nLine\n(  [8]  )\n(3)\t Choose the one that represents [1] a branching structure and [2] a repeating structure from the following \nflowcharts A to C, and answer using the letters.\n(4)\t The figure on the right is an activity diagram that \nillustrates the relationship between yourself and a \nsmartphone when unlocking its screen. Choose the \noption that best fits into the blanks [1] to [4] from the \noptions A to D below, and answer using the letters.\nA\t\nVerify password\nB\t\nEnter password\nC\t\nUnlock screen\nD\t\nScreen turns ON\n(5)\t Name the programming language that can be confirmed only within a web browser, making it optimal for web-\nrelated purposes.\nTry\nA\t\nStart of a repetition\nB\t\nStart/End\nC\t\nFlow of data and control\nD\t\nBranching according to conditions\nE\t\nEnd of a repetition\nF\t\nDisplay on a screen, etc.\nG\t\nData input and output\nH\t\nOperations and other processes\nLoop condition\nProcess 1\nLoop\nStart\nProcess 1\nProcess 2\nEnd\nProcess 1\nCondition\nNo\nYes\nProcess 2\nA\nB\nC\nStart\nEnd\nNo\nYes\nPerson\n[1]\n[2]\n[3]\n[4]\nError message\nSmartphone",
+    "source_pages": [
+      156,
+      156
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-1_p157",
+    "topic": "algorithm",
+    "language": "en",
+    "chunk_type": "algorithm",
+    "text": "158\nAnswer the following questions.\n(1)\t Choose the term that best fits into the blanks [1] to [3] in the following sentences from the options A to F \nbelow, and answer using the letters.\n  The order of calculations or the sequence for creating something is referred to as an (  [1]  ). \nAmong the diagrams that visually represent this, the one that is suitable for representing a single process \nflow is referred to as a (  [2]  ), while the one suitable for representing parallel process flows is \nreferred to as an (  [3]  ).\nA  Programming\t\nB  Programming language\t\nC  Activity diagram\nD  Source code\t\nE  Algorithm\t\nF  Flowchart\n(2)\t Choose the symbols used in flowcharts that correspond to the meanings [1] to [4] from the options A to F \nbelow, and answer using the letters.\n[1]  Start/End\t \t\n\t\n[2]  Branching according to conditions\n[3]  Start of a repetition\t\n[4]  Data input and output\nA  \t\nB  \t\nC  \t\nD \nE  \t\nF  \t\n(3)\t From the following flowcharts, choose the one from A to C that best represents a flowchart depicting the \ncase where “If the product is in stock, purchase it; otherwise, stop shopping.” Answer with the appropriate \nletter.\n(4)\t The figure on the right is an activity diagram showing the \nrelationship between yourself and a vending machine \nwhen purchasing a product. Choose the option that best \nfits into the blanks [1] to [4] from the options A to D \nbelow, and answer using the letters.\nA\t\nInsert money\nB\t\nMoney is counted\nC\t Press button to purchase the product\nD\t Product is discharged\n(5)\t Choose the visual programming language developed for \nbeginners and children from the options A to D, and \nanswer using the letter.\nA\t\nPython\t\nB  Scratch\nC\t JavaScript\t\nD  BASIC\nExercise\n1\nLoop condition\nProcess 1\nLoop\nStart\nProcess 1\nProcess 2\nEnd\nProcess 1\nCondition\nNo\nYes\nProcess 2\nA\nB\nC\nStart\nEnd\nNo\nYes\nPerson\n[1]\n[2]\n[3]\n[4]\nReceive the product\nVending machine",
+    "source_pages": [
+      157,
+      157
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-2_p158",
+    "topic": "variables and assignment",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "159\nInformation Study\nPoint!\n12-2\nProgramming Basics [1] (Python)\nVariables and Sequential Structure\n(1)\t (1print) : \u0007Displays the character string or value inside the parentheses (  ). \nThe character string is enclosed with half-width single quotation marks (’) or double \nquotation marks (\").\n*\u0007Note that numerical values should not be enclosed using \nhalf-width quotation marks.\n01\nprint(‘Hello Khalid’)\nDisplays “Hello Khalid”.\n02\nprint(2023)\nDisplays “2023”.\n(2)\t (2Variable) : \u0007Like a box to store data. Data can be stored in and retrieved from variables.\n<Example> A program to display the character string “Cairo”\n01\ncity = ‘Cairo’\nAssigns “Cairo” to the variable “city”.\n02\nprint(city)\nDisplays the value for the variable “city”.\n*\t \u0007In programming, the “=” symbol does not mean “equal.” Rather, it means “(3assign the right side to \nthe left side).”\n(3)\t (4Assignment operator) : \u0007Something such as “=” used to assign a value to a variable.\n(4)\t (5Arithmetic operator) : \u0007A symbol such as “+” and “-” used in calculations.\nArithmetic operator\nMeaning\na + b\n(6Addition)\na - b\n(7Subtraction)\na * b\n(8Multiplication)\na / b\n(9Division)\na // b\n(10Quotient)\na % b\n(11Remainder when a is divided by b)\na ** b\n(12a to the power of b)\n<Example> A program that performs four basic arithmetic operations\n01\na = 5\n5 is assigned to variable a.\n02\nb = 3\n3 is assigned to variable b.\n03\nprint(a + b)\nDisplays a + b.\n04\nprint(a - b)\nDisplays a - b.\n05\nprint(a * b)\nDisplays a × b.\n06\nprint(a / b)\nDisplays a ÷ b.\n07\nprint(a // b)\nDisplays the quotient when a is divided by b.\n08\nprint(a % b)\nDisplays the remainder when a is divided by b.\n09\nprint(a ** b)\nDisplays a to the power of b.\nHello Khalid\n2023\nExecution result\nCairo\nExecution result\n8\n2\n15\n1.66666\n1\n2\n125\nExecution result",
+    "source_pages": [
+      158,
+      158
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-2_p159",
+    "topic": "variables and assignment",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "160\nWarm Up\nAnswer the following questions.\n(1)\t Choose the program that displays “HelloWorld!” from the options A to D below, and answer using the \nletter.\nA\t HelloWorld!\nB\t ‘HelloWorld!’\nC\t print(HelloWorld!)\nD\t print(‘HelloWorld!’)\n(2)\t Choose the program that displays “Mr. Suzuki” from the options A to D below, and answer using the \nletter.\nA\t \u0007print(name)\nname = ‘Mr. Suzuki’\nB\t \u0007print(name)\nname == ‘Mr. Suzuki’\nC\t \u0007name = ‘Mr. Suzuki’\nprint(name)\nD\t name == ‘Mr. Suzuki’\nprint(name)\n(3)\t When the following program is executed, give the results for items [1] to [5].\na = 6\nprint(a + 4)\n……[1]\nprint(a - 1)\n……[2]\nprint(a * 5)\n……[3]\nprint(a / 2)\n……[4]\nprint(a ** 3)\n……[5]\nExplanation\n(1)\t The print function is used to display character strings or values, and the character string \n“HelloWorld”! is enclosed with either ’ or ”. Therefore, D\n(2)\t “=” is used to assign a value to a variable. In addition, a variable cannot be used before it is defined. \nTherefore, C\n(3)\t Since the value 6 is assigned to the variable “a”, [1] is 6 + 4, which equals 10; [2] is 6 - 1, which equals \n5; [3] is 6 × 5, which equals 30; [4] is 6 ÷ 2, which equals 3; and [5] is 6 to the power of 3, which equals \n216.\n\t\nTherefore, the answers are [1] 10,   [2] 5,   [3] 30,   [4] 3,   [5] 216",
+    "source_pages": [
+      159,
+      159
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-2_p160",
+    "topic": "variables and assignment",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "161\nAnswer the following questions.\n(1)\t Choose the program that displays “Hello” from the options A to D below, and answer using the letter.\nA\t Hello\nB\t ‘Hello’\nC\t print(Hello)\nD\t print(‘Hello’)\n(2)\t Choose the program that displays “Correct” from the options A to D below, and answer using the letter.\nA\t print(result)\nresult = ‘Correct’\nB\t print(result)\nresult == ‘Correct’\nC\t result = ‘Correct’\nprint(result)\nD\t result == ‘Correct’\nprint(result)\n(3)\t Choose the program that displays “2” from the options A to D below, and answer using the letter.\nA\t a = 20\nprint(a % 3)\nB\t print(a % 3)\na = 20\nC\t a = 20\nprint(a * 3)\nD\t print(a * 3)\na = 20\n(4)\t Choose the program that displays “81” from the options A to D below, and answer using the letter.\nA\t b == 9\nprint(b // 2)\nB\t b = 9\nprint(b // 2)\nC\t b == 3\nprint(b ** 4)\nD\t b = 3\nprint(b ** 4)\n(5)\t When the following program is executed, give the results for items [1] to [5].\nc = 5\nprint(c + 3)\n……[1]\nprint(c - 2)\n……[2]\nprint(c * 4)\n……[3]\nprint(c / 2)\n……[4]\nprint(c ** 2)\n……[5]\n(6)\t What is the term for a symbol like “=” used to assign a value to a variable? Choose one from the options A to D \nbelow, and answer using the letter.\nA\t\nArithmetic operator\t\n\t\nB  Comparison operator\nC\t\nAssignment operator\t \t\nD  Logical operator\nTry",
+    "source_pages": [
+      160,
+      160
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-2_p161",
+    "topic": "variables and assignment",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "162\nAnswer the following questions.\n(1)\t Choose the program that displays “Nice to meet you” from the options A to D below, and answer \nusing the letter.\nA\t print(‘Nice to meet you’)\nB\t print(Nice to meet you)\nC\t ‘Nice to meet you’\nD\t Nice to meet you\n(2)\t Choose the program that displays “17 years old” from the options A to D below, and answer using the \nletter.\nA\t print(age)\nage == ‘17 years old’\nB\t print(age)\nage = ‘17 years old’\nC\t age == ‘17 years old’\nprint(age)\nD\t age = ‘17 years old’\nprint(age)\n(3)\t Choose the program that displays “15” from the options A to D below, and answer using the letter.\nA\t a = 5\nprint(a % 3)\nB\t print(a % 3)\na = 5\nC\t a = 5\nprint(a * 3)\nD\t print(a * 3)\na = 5\n(4)\t Choose the program that displays “2” from the options A to D below, and answer using the letter.\nA\t b == 8\nprint(b // 3)\nB\t b = 8\nprint(b // 3)\nC\t b == 8\nprint(b ** 3)\nD\t b = 8\nprint(b ** 3)\n(5)\t When the following program is executed, give the results for items [1] to [5].\nc = 9\nprint(c + 2)\n……[1]\nprint(c - 4)\n……[2]\nprint(c * 2)\n……[3]\nprint(c // 2)\n……[4]\nprint(c % 2)\n……[5]\n(6)\t What is the term for symbols such as “+” and “-” that are used in calculations? Choose one from the \noptions A to D below, and answer using the letter.\nA\t\nComparison operator\t\n\t\nB  Logical operator\nC\t Assignment operator\t\n\t\nD  Arithmetic operator\nExercise\n1",
+    "source_pages": [
+      161,
+      161
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-3_p162",
+    "topic": "loops and conditionals",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "163\nInformation Study\nPoint!\n12-3\nProgramming Basics [2] (Python)\nLoop Structure\n(1)\t\nUsing a (1for statement) makes it possible to execute a process repeatedly. \nA “for” statement is written as shown below.\nfor␣variable␣in␣range([Variable range]):\n␣␣␣␣[Process to repeat]\nIn a “for” statement, the indented block of code is executed repeatedly.\n(2)\t\nIn a “for” statement, the range() instruction can be used to specify a range for a variable.\nWriting style\nMeaning\nrange(end value)\nThe value of the variable increases by 1, starting \nfrom (20) up to the (3end value - 1).\nrange(start value, end value)\nThe value of the variable increases by 1, starting \nfrom the (4start value) up to the (5end value - 1).\nrange(start value, end value, increment)\nThe value of the variable increases by the specified \n(6increment), starting from the (7start value) up to \nthe (8end value - increment).\n<Example> A program that displays integers from 0 to 3\n01\nfor␣i␣in␣range(0, 4):\nRepeat variable “i” increasing by 1 \nfrom 0 to 3.\n02\n␣␣␣␣print(i)\nDisplays the value of variable “i”.\n<Example> A program that displays odd numbers from 1 to 5\n01\nfor␣i␣in␣range(1, 7, 2):\nRepeat variable “i” increasing by \n2 from 1 to 6.\n02\n␣␣␣␣print(i)\nDisplays the value of variable “i”.\nBranching Structure\n(1)\t\n(9Comparison operator) : \u0007Operator used to compare expressions or values.\nComparison \noperator\nMeaning\nExample\nMeaning of the example\n==\n(10Equal) \nx == 70\nx is equal to 70\n! =\n(11Not equal) \nx ! = 70\nx is not equal to 70\n<\n(12Less than) \nx < 70\nx is less than 70\n>\n(13Greater than) \nx > 70\nx is greater than 70\n<=\n(14Less than or equal to) \nx <= 70\nx is less than or equal to 70\n>=\n(15Greater than or equal to) \nx >= 70\nx is greater than or equal to 70\n1\n    0\n    1\n    2\n    3\nExecution result\n    1\n    3\n    5\nExecution result\n2",
+    "source_pages": [
+      162,
+      162
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-3_p163",
+    "topic": "loops and conditionals",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "164\n(2)\t\nUsing (16if statements) allows conditions to be branched and processed as conditional expressions.\n\t・\t(17Conditional expression) : \u0007Expression that determines whether conditions are met and returns \n“true” if met and “false” if not.\t\n[1]  \u0007Using (18if ~ else) makes it possible to describe the process that occurs when a condition is not met.\nif␣[Conditional expression]:\n\t\n[Process when a condition is true]\nelse:\n\t\n[Process when a condition is false]\n<Example> Program for determining pass or fail\n01\nx = 70\nAssign the value 70 to variable x.\n02\nif␣x >= 60:\nIf x is 60 or greater,\n03\n␣␣␣␣result = ‘Pass’\nIf true, assign “Pass” to the variable \nresult.\n04\nelse:\nIf not,\n05\n␣␣␣␣result = ‘Fail’\nAssign “Fail” to the variable result.\n06\nprint(result)\nDisplays the value of the variable result.\n[2]  \u0007Using (19if ~ elif ~ else) makes it possible to determine multiple conditions sequentially.\nif [Conditional expression 1]:\n␣␣␣␣[Process when conditional expression 1 is true]\nelif [Conditional expression 2]:\n␣␣␣␣[Process when conditional expression 1 is false and conditional expression 2 is true]\nelse:\n␣␣␣␣[Process when both conditional expression 1 and conditional expression 2 are false]\n<Example> Program for evaluating based on test scores\n01\nx = 70\nAssign the value 70 to variable x.\n02\nif␣x >= 90:\nIf x is 90 or greater,\n03\n␣␣␣␣result = ‘Grade is A’\nIf true, assign “Grade is A” to the variable result.\n04\nelif␣x >= 50:\nOtherwise, if x is 50 or greater,\n05\n␣␣␣␣result = ‘Grade is B’\nAssign “Grade is B” to the variable result.\n06\nelse:\nIf none of the conditions are met,\n07\n␣␣␣␣result = ‘Grade is C’\nAssign “Grade is C” to the variable result.\n08\nprint(result)\nDisplays the value of the variable result.\n\t\n\tGrade is B\n    Pass\nExecution result\nExecution result",
+    "source_pages": [
+      163,
+      163
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-3_p164",
+    "topic": "loops and conditionals",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "165\nWarm Up\nAnswer the following questions.\n(1)\t Choose the program that displays “Grade is A” from the options A to D below, and answer using the \nletter.\nA\t point = 90\nif point >= 85:\n\t\nresult = ‘Grade is A’\nelse:\n\t\nresult = ‘Grade is B’\nB\t point = 90\nif point >= 85:\n\t\nresult = ‘Grade is A’\nelse:\n\t\nresult = ‘Grade is B’\nprint(result)\nC\t point 90\nif point >= 85:\n\t\nresult = ‘Grade is A’\nelse:\n\t\nresult = ‘Grade is B’\nprint(result)\nD\t point 90\nif point >= 85:\n\t\nresult = ‘Grade is A’\nelse:\n\t\nresult = ‘Grade is B’\n(2)\t The following program displays the total and the average of all integers from 1 to 10. Fill in the blanks A \nto C with the appropriate characters or numbers to complete the program.\ntotal = 0\nfor i in range(1, \nA\n ):\n\t\ntotal = \nB\naverage = \nC\n /10\nprint(total)\nprint(average)\nExplanation\n(1)\t “=” is needed to assign a value to the variable “point”, and the print function is needed to display the \nvalue of the variable “result”. Therefore, B\n(2)\t Set the variable “total” to an initial value of 0 and then calculate the total by continuously adding \nintegers 1 to 10 as variable “i” to the variable “total”. When counting variables from 1 to 10, be sure \nto specify up to the next number, 11. Therefore, A: 11,   B: total+i,   C: total",
+    "source_pages": [
+      164,
+      164
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-3_p165",
+    "topic": "loops and conditionals",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "166\nAnswer the following questions.\n(1)\t Choose the appropriate execution result when the following program is executed from the options A to D \nbelow, and answer using the letter.\n(2)\t Choose the program that displays “Pass” from the options A to D below, and answer using the letter.\nA\t score 95\nif score < 90:\n\t\nresult = ‘Fail’\nelse:\n\t\nresult = ‘Pass’\nprint(result)\nB\t score 95\nif score < 90:\n\t\nresult = ‘Fail’\nelse:\n\t\nresult = ‘Pass’\nC\t score = 95\nif score < 90:\n\t\nresult = ‘Fail’\nelse:\n\t\nresult = ‘Pass’\nD\t score = 95\nif score < 90:\n\t\nresult = ‘Fail’\nelse:\n\t\nresult = ‘Pass’\nprint(result)\n(3)\t The following program counts down from 5 to 0, and when it reaches 0, it displays “Start!”  Fill in the blanks \nA to C with the appropriate characters or numbers to complete the program.\nfor i in \nA\n:\n\t\ncount = \nB\n\t\nif \nC\n:\n\t\n\t\nprint(‘Start!’)\n\t\nelse:\n\t\n\t\nprint(count)\n(4)\t The following program displays “It is an even number” for even numbers from 1 to 100. Fill in the blanks \nA and B with the appropriate characters or numbers to complete the program.\nfor i in range(1, \nA\n):\n\t\nif \nB\n:\n\t\n\t\nprint(‘It is an even number’)\n\t\nelse:\n\t\n\t\nprint(i)\nTry\nfor i in range(0, 5, 1):\n\t\nprint(i)\nA\n0\nB\n0\nC\n1\nD\n1\n1\n1\n2\n2\n2\n2\n3\n3\n3\n3\n4\n4\n4\n4\n5\n5",
+    "source_pages": [
+      165,
+      165
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-3_p166",
+    "topic": "loops and conditionals",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "167\nAnswer the following questions.\n(1)\t Choose the program that would produce the same execution result as the following program from the \noptions A to D below, and answer using the letter.\nfor i in range(3):\n\t\nprint(i)\nA\t for i in range(0, 3):\n\t\nprint(3)\nB\t for i in range(0, 3, 1):\n\t\nprint(i)\nC\t for i in range(0, 3, 1):\n\t\nprint(3)\nD\t for i in range(0, 3, 2):\n\t\nprint(i)\n(2)\t Choose the appropriate execution result when the following program is executed from the options A to C \nbelow, and answer using the letter.\nx = 7\nif x < 3:\n\t\nprint(‘We will seat you at the counter’)\nelif x <= 10:\n\t\nprint(‘We will seat you at a table’)\nelse:\n\t\nprint(‘No seats are available’)\nA\t\nWe will seat you at the counter\nB\t\nWe will seat you at a table\nC\t\nNo seats are available\n(3)\t The following program displays the total for all numbers from 1 to 100. Fill in the blanks A and B with \nthe appropriate characters or numbers to complete the program.\ntotal = 0\nfor i in range(1, \nA\n ):\n\t\ntotal = \nB\nprint(total)\n(4)\t The following program displays the number of even numbers between 1 and 10. Fill in the blanks A to C \nwith the appropriate characters or numbers to complete the program.\nfor i in \nA\n:\n\t\nif i % 2 == 0:\n\t\n\t\ncount = count + \nB\nprint( \nC  )\nExercise\n1",
+    "source_pages": [
+      166,
+      166
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-4_p167",
+    "topic": "lists",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "168\nInformation Study\nPoint!\n12-4\nApplication of Programming [1] (Python)\n(List)\n(1)\t (1List) : \u0007A collection of data items arranged in sequence. Data can be managed collectively. \nList declaration\nList name = [data0, data1, data2, …]\nAdding elements to the end of an list\nList name.append(data)\n<Example> Character string list\nweek = [‘Mon’, ‘Tue’, ‘Wed’, ‘Thu’, ‘Fri’, ‘Sat’, ‘Sun’]\n　　　　　List of numbers\nnumber = [7, 22, 11, 34, 17]\n(2)\t (2Element) : \u0007Each value included in an list. Displays the list name and its place number\nUsing (3Index)(element numbers) makes it possible to retrieve elements from a list. Note \nthat Index do not start from 1, but from (40). \n(3)\t List operation : \u0007Allows list element to be managed using a single index.\n<Example> List declaration and method for accessing elements\nUsing a variable as a index such as in a[i] makes it possible to specify elements with the variable.\nThis is convenient when processing elements one at a time using a “for” statement.\n01\na = [7, 22, 11, 34, 17]\nDeclares list “a” and assigns a \nnumerical value to it.\n02\nfor␣i␣in␣range(0,5,1):\nRepeats while increasing variable i \nfrom 0 to (54) in increments of 1.\n03\n␣␣␣␣print(a[i])\nDisplays elements from list “a” that \nsatisfy the condition (6a[i]).\n<Example> Adding an element to the end of a one-dimensional list\n01\na = [ ]\nDeclares the list “a”.\n02\na.append(1)\nAdds (71) to the end of list “a”.\n03\na.append(4)\nAdds (84) to the end of list “a”.\n04\na.append(9)\nAdds (99) to the end of the list “a”.\n05\nprint(a)\nDisplays the values for list “a”.\n(4)   (10Two-dimensional list) : \u0007An list that manages data using indexs in both the row and column directions.\b \nAn element at row “i” and column “j” would be specified using the two \nindexs as a[i][j].\n<Example> Definition of a two-dimensional list and the method for accessing elements\n01\na=\u0007[[‘A’, ‘B’, ‘C’],\n[‘D’, ‘E’, ‘F’],]\nDeclares list “a” and assigns a character \nstring to it.\n02\nprint(a[0][0])\nDisplays the value for (11a[0][0]).\n03\nprint(a[1][2])\nDisplays the value for (12a[1][2]).\na\n7\n22\n11\n34\n17\na[0]\na[1]\na[2]\na[3]\na[4]\n   7\n   22\n   11\n   34\n   17\nExecution result\n   [1, 4, 9]\nExecution result\n   A\n   F\nExecution result",
+    "source_pages": [
+      167,
+      167
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-4_p168",
+    "topic": "lists",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "169\nWarm Up\nAnswer the following questions.\n(1)\t For programs A and B below, give the values displayed when each is executed.\nA\t a = [57, 16, 29, 44]\nprint(a[2])\nB\t a = [\u0007[1, 2, 3],\n[4, 5, 6], \n[7, 8, 9]]\n\t\nprint(a[2][1])\n(2)\t The following program is designed to find the minimum value among the elements in list “a”. Fill in the \nblanks A and B with the appropriate characters or numbers to complete the program.\na = [34, 52, 11, 40, 17]\nmin = a[0]\nfor i in range(1, \nA\n, 1):\n\t\nif a[i] < min:\n\t\n\t\nmin = \nB\nprint(min)\n(3)\t Fill in the blanks A to E in the following program with the appropriate characters or numbers to \ncomplete the program so that it displays the “Execution result” as shown.\na = \u0007[[‘A’, ‘B’, ‘C’, ‘D’], \n [‘E’, ‘F’, ‘G’, ‘H’]]\nfor i in range(\nA\n, \nB\n, 1):\n\t\nfor j in range(\nC\n, \nD\n, 1):\n\t\n\t\nprint(\nE\n)\t\nExplanation\n(1)\t Note that list index start at 0, not 1. In addition, an element in a two-dimensional list can be represented as \na[i][j], where “i” indicates the row and “j” indicates the column. Therefore, A: 29,   B: 8\n(2)\t Set “min” as the variable that stores the minimum value of the list “a” so it is a[0]. Next, examine each \nelement of list “a” sequentially, and if a[i] is smaller than min, update min to that value.\n\t\nTherefore, A: 5,   B: a[i]\n(3)\t A: 0,   B: 2,   C: 0,   D: 4,   E: a[i][j]\n   A\n   B\n   C\n   (Omitted)\n   H\nExecution result",
+    "source_pages": [
+      168,
+      168
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-4_p169",
+    "topic": "lists",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "170\nAnswer the following questions.\n(1)\t For programs A to C below, give the values displayed when each is executed.\nA\t a = [1, 4, 9, 16, 25]\n\t\nprint(a[3])\nB\t a = [ ]\na.append(8)\na.append(28)\nprint(a[1])\nC\t a = [\u0007[‘A’, ‘B’, ‘C’, ‘D’, ‘E’], \n[‘F’, ‘G’, ‘H’, ‘I’, ‘J’], \n[‘K’, ‘L’, ‘M’, ‘N’, ‘O’]]\n\t\nprint(a[2][1])\n(2)\t The following program finds the total of the elements in list “a”. Fill in the blanks A to C with the appropriate \ncharacters or numbers to complete the program.\na = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nsum = 0\nfor i in range(\nA\n, \nB\n, 1):\n\t\nsum = sum + \nC\nprint(sum)\n(3)\t The following program finds the maximum value among the elements in list “a”. Fill in the blanks A to C with \nthe appropriate characters or numbers to complete the program.\na = [7, 22, 11, 34, 17]\nmax = 0\nfor i in range(0, \nA\n, 1):\n\t\nif a[i] \nB\n max:\n\t\n\t\nmax = \nC\nprint(max)\n(4)\t Fill in the blanks A to E in the following program with the appropriate characters or numbers to complete the \nprogram so that it displays the “Execution result” as shown.\na = \u0007[[‘A’, ‘B’, ‘C’, ‘D’, ‘E’], \n [‘F’, ‘G’, ‘H’, ‘I’, ‘J’]]\nfor i in range(\nA\n, \nB\n, 1):\n\t\nfor j in range(\nC\n, \nD\n, 1):\n\t\n\t\nprint(\nE\n)\t\nTry\n   A\n   B\n   C\n   (Omitted)\n   J\nExecution result",
+    "source_pages": [
+      169,
+      169
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-4_p170",
+    "topic": "lists",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "171\nAnswer the following questions.\n(1)\t For programs A to C below, give the values displayed when each is executed.\nA\t a = [0, 1, 2, 3]\nprint(a[1])\nB\t a = [‘A’]\na.append(‘B’)\na.append(‘C’)\nprint(a[1])\nC\t a = [\u0007[‘Japanese’, ‘Mathematics’, ‘English’], \n[‘Social studies’, ‘Science’, ‘Information studies’]]\n\t\nprint(a[1][2])\n(2)\t The following program is designed to find the minimum value among the elements in list “a”. Fill in the \nblanks A to C with the appropriate characters or numbers to complete the program.\na = [24, 43, 9, 25, 17]\nmin = \nA\nfor i in range(0, \nB\n, 1):\n\t\nif a[i] < min:\n\t\n\t\nmin = \nC\n  print(min)\n(3)\t The following program counts the number of elements in list “a” that are greater than 10. Fill in the blanks \nA to C with the appropriate characters or numbers to complete the program.\na = [12, 8, 9, 13, 11]\ncount = 0\nfor i in range(\nA\n, \nB\n, 1):\n\t\nif \nC\n > 10:\n\t\n\t\ncount = count + 1\nprint(count)\n(4)\t Fill in the blanks A to E in the following program with the appropriate characters or numbers to complete \nthe program so that it displays the “Execution result” as shown.\na = \u0007[[‘Japanese’, ‘Mathematics’, ‘English’], \n [‘Social studies’, ‘Science’, ‘Information studies’]]\nfor i in range(\nA\n, \nB\n, 1): \n\t\nfor j in range(\nC\n, \nD\n, 1): \n\t\n\t\nprint(\nE\n)\nExercise\n1\nJapanese\nMathematics\nEnglish\nSocial studies\nScience\nInformation studies\nExecution result",
+    "source_pages": [
+      170,
+      170
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-5_p171",
+    "topic": "functions",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "172\nInformation Study\nPoint!\n12-5\nApplication of Programming [2] (Python)\nFunctions\n(1)\t (1Function) : \u0007A set of operations performed by a computer described as a cohesive unit.  A variable \nspecified to receive a value within a function is referred to as an (2argument). Using \n(3return) makes it possible to pass the value resulting from the process within the function \nto the caller as a (4return value). In addition, when a function is used, it is necessary to \nperform the process of (5calling) the function.\n<Example> Example of a function with one argument: A program to find the function y = 2x\n01\ndef function(x):\nDefines a function called (6function).\n02\n\t\ny = 2 * x\nAssigns the value from 2*x to variable “y”.\n03\n\t\nreturn y\nReturns “y” as (7return value).\n04\nprint(function(5))\nPasses “x” as 5 to the function.\n<Example> Example of a function with two arguments: A program to find the area of a triangle\n01\ndef area(base, height):\nDefines a function called “area”.\n02\n\t\nS= base*height/2\nAssigns the value from \n“base*height/2” to variable “S”.\n03\n\t\nreturn S\nReturns “S” as the return value.\n04\nprint(area(10, 5))\nPasses “base” as (810) and “height” \nas (95) to the function “area”.\n(2)\t Functions include (10built-in functions) such as “print()” that can be used without definition, and \n(11user-defined functions) that you can define.\ndef [function name](Argument 1, Argument 2, …):\n \n[Process]\n \nreturn [return value]\nArgument\nFunction name (Argument 1, Argument 2, …)\nFunction Call\nReturn value\nDefinition of a\nFunction\n   10\nExecution result\n   25\nExecution result",
+    "source_pages": [
+      171,
+      171
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-5_p172",
+    "topic": "functions",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "173\nWarm Up\nAnswer the following questions.\n(1)\t In the following program, the function “circle” is used to calculate the area of a circle. Give the \nprogram that fits in blanks A and B. Also, give the value displayed when row [1] is executed.\nA\n circle(r):\n\t\nS = r * r * 3.14\n\t\nB\n S\na = circle(5)\nprint(a)      # [1]\n(2)\t In the following program, the function “judge” takes the test score as an argument and displays “Pass” \nif the score is 80 or above, and “Fail” if it is below 80. Give the program that fits in blanks A and B.\ndef judge(score):\n\t\nif score \nA\n 80:\n\t\n\t\nprint(‘Pass’)\n\t\nB\n:\n\t\n\t\nprint(‘Fail’)\njudge(40)\nExplanation\n(1)\t In programming, the function is defined as shown below.\ndef function name(argument):\n\t\n[Process]\n\t\nreturn [return value]\nTherefore, the programs that fit in blanks A and B are as follows.\nA: def,   B: return\nIn addition, when the function “circle” is called in [1], 5 is passed as argument “r” in the function \n“circle”.\nTherefore, when row [1] is executed, it is 5 × 5 × 3.14 = 78.5, so 78.5 is displayed.\n(2)\t In the programming, a conditional branch was defined as shown below.\nif conditional expression:\n\t\n[Process when a condition is true]\nelse:\n\t\n[Process when a condition is false]\nTherefore, the programs that fit in blanks A and B are as follows.\nA: >=,   B: else",
+    "source_pages": [
+      172,
+      172
+    ]
+  },
+  {
+    "chunk_id": "en_ch12_12-5_p173",
+    "topic": "functions",
+    "language": "en",
+    "chunk_type": "code_block",
+    "text": "174\nAnswer the following questions.\n(1)\t Choose the term that best fits into the blanks [1] and [2] from the options A to D below, and answer using the \nletters.\ndef function name ( [1]\n):\n\t\n[Process]\n\t\nreturn [2]\nA\t Argument\nB\t Return value\nC\t Complement\nD\t Random number\n(2)\t In the following program, the function “area” is used to calculate the area of a triangle. Give the program that \nfits in blanks A and B. Also, give the values displayed when rows [1] and [2] are executed.\ndef area(base, height):\n\t\nS = \nA\n\t\nB\n S\na = area(10, 5)\nb = area(6, 7)\nprint(a)      # [1]\nprint(b)      # [2]\n(3)\t In the following program, the function “celsius_to_fahrenheit” converts temperatures from Celsius to \nFahrenheit. Give the program that fits in blanks A and B.\ndef celsius_to_fahrenheit(celsius):\n\t\nfahrenheit = (celsius * 9/5) + 32\n\t\nreturn \nA\ntemp_celsius = 25\nresult = celsius_to_fahrenheit(\nB\n)\nprint(result)\n(4)\t In the following program, test scores are given as arguments to the \nfunction “evaluate”. In addition, the relationship between scores \nand grades is according to the table on the right. Give the program \nthat fits in the blanks A to C.\ndef evaluate(score):\n\t\nif score \nA\n 80:\n\t\n\t\nprint(‘A’)\n\t\nB\n score \nC\n 50:\n\t\n\t\nprint(‘B’)\n\t\nelse:\n\t\n\t\nprint(‘C’)\nevaluate(40)\nTry\nScore\nGrade\n80 or higher\nA\n50 or higher but less than 80\nB\nLess than 50\nC",
+    "source_pages": [
+      173,
+      173
+    ]
+  }
+]

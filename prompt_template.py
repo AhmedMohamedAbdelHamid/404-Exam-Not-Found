@@ -15,13 +15,23 @@ from schema import QuestionOut
 # ---------------------------------------------------------------------
 
 SAMPLE_CHUNKS = {
-    # Pulled verbatim (paraphrased/condensed for token economy, facts
-    # preserved) from the real course textbook: ICT_EN__Sec1_Tr1.pdf,
-    # Chapter 12 "Programming (Python)", sections 12-2 and 12-3.
-    "chunk_12-2_variables": {
+    # Pulled/paraphrased from the real course textbook (content
+    # verified against ICT_EN__Sec1_Tr1.pdf / ICT_AR__Sec1_Tr1.pdf,
+    # Chapter 12 "Programming (Python)", sections 12-2 and 12-3).
+    #
+    # Structure matches A's real get_chunks() return shape exactly
+    # (chunk_id, topic, language, chunk_type, text, source_pages) --
+    # topic strings and chunk_ids below were reconciled against A's
+    # actual chunker output (chunks_en.json / chunks_ar.json) on
+    # Day 3, after A flagged a mismatch: A's chunker tags the whole
+    # "for loops + if/elif/else" page range as ONE combined topic,
+    # "loops and conditionals" -- not "loops" and "conditionals" as
+    # two separate topics, which is what this file used through Day 2.
+    "en_ch12_12-2_p160": {
         "topic": "variables and assignment",
         "language": "en",
         "chunk_type": "code_block",
+        "source_pages": [160, 160],
         "text": (
             "print(x) displays the string or value inside the parentheses; "
             "strings are wrapped in quotes, numbers are not. A variable is "
@@ -40,12 +50,13 @@ SAMPLE_CHUNKS = {
             "store a value in age, it only compares."
         ),
     },
-    "chunk_12-3_for_loop": {
-        "topic": "loops",
+    "en_ch12_12-3_p162": {
+        "topic": "loops and conditionals",
         "language": "en",
         "chunk_type": "code_block",
+        "source_pages": [162, 162],
         "text": (
-            "A for statement repeats a process. Syntax: "
+            "Loop structure. A for statement repeats a process. Syntax: "
             "for variable in range([range]): [process to repeat], with "
             "the repeated block indented.\n\n"
             "range(end_value): variable goes from 0 up to end_value - 1.\n"
@@ -61,17 +72,18 @@ SAMPLE_CHUNKS = {
             "    print(i)\n"
             "-> Output: 1 3 5\n\n"
             "Note range(end_value) stops BEFORE reaching end_value -- "
-            "range(4) produces 0,1,2,3, not 0,1,2,3,4."
+            "range(4) produces 0,1,2,3, not 0,1,2,3,4.\n\n"
+            "Branching structure. Comparison operators: == (equal), "
+            "!= (not equal), < (less than), > (greater than), "
+            "<= (less than or equal), >= (greater than or equal)."
         ),
     },
-    "chunk_12-3_if_elif_else": {
-        "topic": "conditionals",
+    "en_ch12_12-3_p163": {
+        "topic": "loops and conditionals",
         "language": "en",
         "chunk_type": "code_block",
+        "source_pages": [163, 163],
         "text": (
-            "Comparison operators: == (equal), != (not equal), < (less "
-            "than), > (greater than), <= (less than or equal), >= "
-            "(greater than or equal).\n\n"
             "An if/else statement branches on a conditional expression: \n"
             "if [condition]:\n"
             "    [process when true]\n"
@@ -98,11 +110,13 @@ SAMPLE_CHUNKS = {
     # --- Arabic-track chunk (same code/output as the English for-loop
     #     chunk above, verified against ICT_AR__Sec1_Tr1.pdf; the code
     #     itself stays in Latin script in the real textbook -- only the
-    #     surrounding prose is Arabic) ---
-    "chunk_12-3_for_loop_ar": {
-        "topic": "loops",
+    #     surrounding prose is Arabic). Real chunk_id/topic per A's
+    #     chunks_ar.json.
+    "ar_ch12_12-3_p175": {
+        "topic": "loops and conditionals",
         "language": "ar",
         "chunk_type": "code_block",
+        "source_pages": [175, 175],
         "text": (
             "جملة for تكرر عملية ما. الصيغة: "
             "for variable in range([range]): [العملية المراد تكرارها], "
@@ -230,16 +244,62 @@ def parse_and_validate(raw_llm_output: str) -> QuestionOut:
 #    This is what lets B2/B3 build on this today without a live API key.
 # ---------------------------------------------------------------------
 
+def _simulated_llm_response_for_variables_chunk() -> str:
+    """Hand-written stand-in for the variables/assignment chunk, testing
+    the '=' vs '==' misconception the textbook itself calls out."""
+    return json.dumps({
+        "question": "What is the output of the following code?\ncity = 'Cairo'\nprint(city)",
+        "topic": "variables and assignment",
+        "language": "en",
+        "chunk_type": "code_block",
+        "source_chunk_id": "en_ch12_12-2_p160",
+        "options": [
+            {"text": "Cairo", "correct": True, "misconception": None},
+            {"text": "city", "correct": False, "misconception": "confuses the variable name with the value it stores"},
+            {"text": "'Cairo'", "correct": False, "misconception": "assumes print() displays the quotes literally, not just the string content"},
+            {"text": "An error, because city is not defined", "correct": False, "misconception": "assumes assignment must happen on a separate line before it counts as 'defined', ignoring that the assignment on the line above already ran"},
+        ],
+        "difficulty": {
+            "bloom_level": 1, "bloom_justification": "recalls what print() and '=' do in a directly-shown example",
+            "distractor_quality": 2, "distractor_justification": "distractors are mostly shallow misunderstandings of syntax, not deep misconceptions",
+            "concept_depth": 1, "concept_depth_justification": "single concept (assignment then print), single chunk",
+        },
+    })
+
+
+def _simulated_llm_response_for_if_elif_chunk() -> str:
+    """Hand-written stand-in for the if/elif/else chunk, using the
+    textbook's own grading example (x=70 -> 'Grade is B')."""
+    return json.dumps({
+        "question": "What does the following code print?\nx = 70\nif x >= 90:\n    result = 'Grade is A'\nelif x >= 50:\n    result = 'Grade is B'\nelse:\n    result = 'Grade is C'\nprint(result)",
+        "topic": "loops and conditionals",
+        "language": "en",
+        "chunk_type": "code_block",
+        "source_chunk_id": "en_ch12_12-3_p163",
+        "options": [
+            {"text": "Grade is B", "correct": True, "misconception": None},
+            {"text": "Grade is C", "correct": False, "misconception": "assumes elif is only checked if if is False AND some other condition fails, rather than running as soon as its own condition is true"},
+            {"text": "Grade is A", "correct": False, "misconception": "assumes the condition closest to the variable's actual value wins, rather than evaluating top-to-bottom and stopping at the first true branch"},
+            {"text": "Grade is B and Grade is C", "correct": False, "misconception": "assumes elif/else are independent checks like separate if statements, rather than a single chain where only one branch executes"},
+        ],
+        "difficulty": {
+            "bloom_level": 3, "bloom_justification": "applies the if/elif/else rule to predict output for a new input value not shown verbatim as the worked example's exact trace",
+            "distractor_quality": 4, "distractor_justification": "distractors reflect the real, common misconception that elif/else behave like independent if statements",
+            "concept_depth": 2, "concept_depth_justification": "single concept (elif short-circuiting) but requires tracing multiple lines/branches",
+        },
+    })
+
+
 def _simulated_llm_response_for_for_loop_chunk() -> str:
     """Hand-written stand-in for what the LLM should return, given the
     real for-loop chunk above, at target_difficulty=2. Used to
     sanity-check the parser and schema before wiring a real API call."""
     return json.dumps({
         "question": "What does the following code print?\nfor i in range(1, 7, 2):\n    print(i)",
-        "topic": "loops",
+        "topic": "loops and conditionals",
         "language": "en",
         "chunk_type": "code_block",
-        "source_chunk_id": "chunk_12-3_for_loop",
+        "source_chunk_id": "en_ch12_12-3_p162",
         "options": [
             {"text": "1 3 5", "correct": True, "misconception": None},
             {"text": "1 3 5 7", "correct": False, "misconception": "off-by-one boundary error: assumes range(start, end, step) includes the end value"},
@@ -260,10 +320,10 @@ def _simulated_llm_response_for_for_loop_chunk_ar() -> str:
     question/option text is in Arabic."""
     return json.dumps({
         "question": "ماذا تطبع الشيفرة التالية؟\nfor i in range(1, 7, 2):\n    print(i)",
-        "topic": "loops",
+        "topic": "loops and conditionals",
         "language": "ar",
         "chunk_type": "code_block",
-        "source_chunk_id": "chunk_12-3_for_loop_ar",
+        "source_chunk_id": "ar_ch12_12-3_p175",
         "options": [
             {"text": "1 3 5", "correct": True, "misconception": None},
             {"text": "1 3 5 7", "correct": False, "misconception": "خطأ حدي (off-by-one): افتراض أن range تشمل قيمة النهاية"},
@@ -280,7 +340,7 @@ def _simulated_llm_response_for_for_loop_chunk_ar() -> str:
 
 if __name__ == "__main__":
     # Show the actual prompt that will be sent (for review/sharing with team)
-    messages = build_messages("chunk_12-3_for_loop", target_difficulty=2)
+    messages = build_messages("en_ch12_12-3_p162", target_difficulty=2)
     print("=" * 70)
     print("SYSTEM PROMPT")
     print("=" * 70)

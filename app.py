@@ -2,7 +2,7 @@ from html import escape
 
 import streamlit as st
 
-from frontend.dummy_data import DUMMY_QUESTION
+from frontend.dummy_data import QUESTION_FIXTURES
 from frontend.ui import apply_styles, bars, heading, metrics, panel
 
 
@@ -12,6 +12,33 @@ apply_styles()
 
 def navigate(view):
     st.session_state.view = view
+
+
+EXAM_STATE_DEFAULTS = {
+    "exam_started": False,
+    "current_question_index": 0,
+    "selected_answer": None,
+    "current_question_submitted": False,
+    "answers": [],
+    "exam_complete": False,
+}
+
+
+def initialize_exam_state():
+    for key, value in EXAM_STATE_DEFAULTS.items():
+        if key not in st.session_state:
+            st.session_state[key] = value.copy() if isinstance(value, list) else value
+
+
+def reset_exam():
+    for key, value in EXAM_STATE_DEFAULTS.items():
+        st.session_state[key] = value.copy() if isinstance(value, list) else value
+    for key in list(st.session_state):
+        if key.startswith("exam_answer_"):
+            del st.session_state[key]
+
+
+initialize_exam_state()
 
 
 if "view" not in st.session_state:
@@ -30,7 +57,7 @@ with st.sidebar:
                   on_click=navigate, args=(view,))
     st.markdown(
         '<div class="sidebar-note"><span class="live-dot"></span> DEMO WORKSPACE'
-        '<p>One sample question.<br>A preview of what comes next.</p></div>'
+        '<p>Five-question assessment.<br>Local schema-compatible fixtures.</p></div>'
         '<div class="sidebar-footer">GENAI FOR EDUCATION<br><span>Student track / 2026</span></div>',
         unsafe_allow_html=True,
     )
@@ -43,38 +70,149 @@ st.markdown(
 )
 
 if st.session_state.view == "Exam":
-    question = DUMMY_QUESTION
-    st.markdown(
-        '<div class="exam-top"><div><span class="eyebrow">YOUR ASSESSMENT</span>'
-        '<h2>Question <b>01</b><span class="muted"> / 10</span></h2></div>'
-        f'<span class="difficulty"><i></i> Difficulty · {question.difficulty_score}/5</span></div>',
-        unsafe_allow_html=True,
-    )
-    st.progress(0.1, text="Sample assessment · Question 1 of 10 · 10% complete")
-    with st.container(border=True, key="question_card"):
-        language = "English" if question.language.value == "en" else "Arabic"
+    question_items = list(QUESTION_FIXTURES.items())
+    question_count = len(question_items)
+
+    if not st.session_state.exam_started:
         st.markdown(
-            '<div class="badges"><span>PYTHON FUNDAMENTALS</span>'
-            f'<span>{escape(question.topic.upper())}</span><span>{language.upper()}</span></div>'
-            f'<h3 class="question-text">{escape(question.question)}</h3>'
-            '<p class="question-hint">Select the one best answer.</p>',
+            '<section class="start-panel"><div class="eyebrow">YOUR ASSESSMENT</div>'
+            '<h2>Python Fundamentals</h2><div class="start-meta">'
+            '<span>5 Questions</span><span>English</span></div>'
+            '<p>Test your understanding of core Python concepts. Submit each answer to see '
+            'feedback before moving to the next question.</p></section>',
             unsafe_allow_html=True,
         )
-        st.radio(
-            "Choose one answer", range(len(question.options)), index=None,
-            format_func=lambda index: f"**{chr(65 + index)}**　 `{question.options[index].text}`",
-            label_visibility="collapsed", key="sample_answer",
+        if st.button("Start Assessment →", type="primary", use_container_width=True):
+            reset_exam()
+            st.session_state.exam_started = True
+            st.rerun()
+
+    elif st.session_state.exam_complete:
+        correct_count = sum(answer["correct"] for answer in st.session_state.answers)
+        accuracy = round(correct_count / question_count * 100)
+        st.markdown(
+            '<section class="completion-panel"><div class="eyebrow">ASSESSMENT COMPLETE</div>'
+            '<h2>Assessment Complete</h2>'
+            f'<div class="completion-score"><strong>{correct_count}</strong><span> / {question_count}</span></div>'
+            f'<p>{accuracy}% accuracy · Your responses have been recorded for this session.</p></section>',
+            unsafe_allow_html=True,
         )
-        st.markdown('<div class="control-divider"></div>', unsafe_allow_html=True)
-        previous, status, submit = st.columns([1, 2, 1.3], vertical_alignment="center")
-        with previous:
-            st.button("Previous", disabled=True, use_container_width=True)
-        with status:
-            st.markdown('<div class="control-status">Question 1 of 10 <span>·</span> 10% complete</div>',
-                        unsafe_allow_html=True)
-        with submit:
-            st.button("Submit Answer →", type="primary", disabled=True, use_container_width=True)
-    st.caption("Demo preview · Selection is available. Submission and progression are not enabled yet.")
+        results, restart = st.columns([1.4, 1])
+        with results:
+            if st.button("View Results", type="primary", use_container_width=True):
+                navigate("Results")
+                st.rerun()
+        with restart:
+            if st.button("Restart Assessment", use_container_width=True):
+                reset_exam()
+                st.session_state.exam_started = True
+                st.rerun()
+
+    else:
+        question_index = st.session_state.current_question_index
+        question_id, question = question_items[question_index]
+        progress = (question_index + 1) / question_count
+        progress_percent = round(progress * 100)
+        header, restart = st.columns([4, 1.25], vertical_alignment="center")
+        with header:
+            st.markdown(
+                '<div class="exam-top"><div><span class="eyebrow">YOUR ASSESSMENT</span>'
+                f'<h2>Question <b>{question_index + 1:02d}</b><span class="muted"> / {question_count:02d}</span></h2></div>'
+                f'<span class="difficulty"><i></i> Difficulty · {question.difficulty_score}/5</span></div>',
+                unsafe_allow_html=True,
+            )
+        with restart:
+            if st.button("Restart Assessment", use_container_width=True):
+                reset_exam()
+                st.session_state.exam_started = True
+                st.rerun()
+
+        st.progress(
+            progress,
+            text=f"Python Fundamentals · Question {question_index + 1} of {question_count} · {progress_percent}% complete",
+        )
+        with st.container(border=True, key="question_card"):
+            language = "English" if question.language.value == "en" else "Arabic"
+            st.markdown(
+                '<div class="badges"><span>PYTHON FUNDAMENTALS</span>'
+                f'<span>{escape(question.topic.upper())}</span><span>{language.upper()}</span></div>'
+                f'<h3 class="question-text">{escape(question.question)}</h3>'
+                '<p class="question-hint">Select the one best answer.</p>',
+                unsafe_allow_html=True,
+            )
+            submitted_response = None
+            if st.session_state.current_question_submitted:
+                submitted_response = next(
+                    answer for answer in st.session_state.answers if answer["question_id"] == question_id
+                )
+            persisted_answer = (
+                submitted_response["selected_option_index"]
+                if submitted_response is not None
+                else st.session_state.selected_answer
+            )
+            selected_answer = st.radio(
+                "Choose one answer",
+                range(len(question.options)),
+                index=persisted_answer,
+                format_func=lambda index: f"**{chr(65 + index)}**　 `{question.options[index].text}`",
+                label_visibility="collapsed",
+                key=f"exam_answer_{question_id}",
+                disabled=st.session_state.current_question_submitted,
+            )
+            st.session_state.selected_answer = selected_answer
+
+            if st.session_state.current_question_submitted:
+                correct_index = submitted_response["correct_option_index"]
+                if submitted_response["correct"]:
+                    st.markdown('<div class="answer-feedback correct">Correct</div>', unsafe_allow_html=True)
+                else:
+                    correct_text = escape(question.options[correct_index].text)
+                    st.markdown(
+                        f'<div class="answer-feedback incorrect"><strong>Incorrect</strong>'
+                        f'<span>Correct answer: {chr(65 + correct_index)}. {correct_text}</span></div>',
+                        unsafe_allow_html=True,
+                    )
+
+            st.markdown('<div class="control-divider"></div>', unsafe_allow_html=True)
+            status, action = st.columns([2, 1.3], vertical_alignment="center")
+            with status:
+                st.markdown(
+                    f'<div class="control-status">Question {question_index + 1} of {question_count} '
+                    f'<span>·</span> {progress_percent}% complete</div>',
+                    unsafe_allow_html=True,
+                )
+            with action:
+                if not st.session_state.current_question_submitted:
+                    if st.button(
+                        "Submit Answer →",
+                        type="primary",
+                        disabled=selected_answer is None,
+                        use_container_width=True,
+                    ):
+                        correct_index = next(i for i, option in enumerate(question.options) if option.correct)
+                        is_correct = selected_answer == correct_index
+                        if not any(answer["question_id"] == question_id for answer in st.session_state.answers):
+                            st.session_state.answers.append({
+                                "question_id": question_id,
+                                "question_index": question_index,
+                                "topic": question.topic,
+                                "selected_option_index": selected_answer,
+                                "correct_option_index": correct_index,
+                                "correct": is_correct,
+                                "misconception": None if is_correct else question.options[selected_answer].misconception,
+                                "difficulty_score": question.difficulty_score,
+                            })
+                        st.session_state.current_question_submitted = True
+                        st.rerun()
+                elif question_index < question_count - 1:
+                    if st.button("Next Question →", type="primary", use_container_width=True):
+                        st.session_state.current_question_index += 1
+                        st.session_state.selected_answer = None
+                        st.session_state.current_question_submitted = False
+                        st.rerun()
+                elif st.button("Finish Assessment →", type="primary", use_container_width=True):
+                    st.session_state.exam_complete = True
+                    st.rerun()
 
 elif st.session_state.view == "Results":
     heading("Assessment Complete", "A clearer picture of your progress, and where to go next.", "SAMPLE RESULTS")

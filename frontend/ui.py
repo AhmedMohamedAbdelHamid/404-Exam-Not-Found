@@ -91,6 +91,16 @@ h1,h2,h3 { color:var(--text); letter-spacing:-.035em; }
     animation:shimmer 5s ease-in-out infinite; }
 .st-key-question_card { background:#121216; border:1px solid var(--border); border-radius:16px; padding:1.5rem !important; }
 .st-key-question_card > div { border:none !important; }
+.start-panel,.completion-panel { background:#121216; border:1px solid var(--border); border-radius:16px;
+    padding:2rem; margin:.4rem 0 1rem; box-shadow:0 12px 42px rgba(139,16,26,.08); }
+.start-panel h2,.completion-panel h2 { font-size:clamp(1.5rem,2.5vw,2.2rem); margin:.6rem 0; }
+.start-panel p,.completion-panel p { max-width:650px; color:var(--muted); font-size:.82rem; line-height:1.7; }
+.start-meta { display:flex; gap:.55rem; margin:.8rem 0; }
+.start-meta span { border:1px solid var(--border); background:#17171C; border-radius:6px; padding:.4rem .65rem;
+    color:#D4D4D8; font-size:.66rem; }
+.completion-score { margin:.8rem 0 .2rem; }
+.completion-score strong { color:#FF4655; font-size:3.4rem; letter-spacing:-.07em; }
+.completion-score span { color:var(--muted); font-size:1.5rem; }
 .badges { display:flex; flex-wrap:wrap; gap:.45rem; }
 .badges span,.tag { border:1px solid var(--border); background:#17171C; color:#C5C5CC; border-radius:5px;
     padding:.3rem .55rem; font-size:.59rem; font-weight:600; letter-spacing:.06em; }
@@ -114,6 +124,13 @@ h1,h2,h3 { color:var(--text); letter-spacing:-.035em; }
 [data-testid="stMain"] label[data-testid="stRadioOption"] code { background:none; padding:0; color:var(--text); font-size:1.05rem; }
 [data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:checked) { background:rgba(139,16,26,.14); border-color:var(--red); }
 [data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:checked) strong { background:#8B101A; color:white; border-color:#FF3040; }
+[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:disabled) { cursor:default; opacity:.72; }
+[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:disabled:checked) { opacity:1; }
+.answer-feedback { display:flex; align-items:center; gap:.7rem; padding:.8rem 1rem; margin:.8rem 0 .2rem;
+    border-radius:8px; font-size:.76rem; }
+.answer-feedback.correct { color:#86EFAC; background:rgba(34,197,94,.09); border:1px solid rgba(34,197,94,.24); font-weight:700; }
+.answer-feedback.incorrect { color:#FDA4AF; background:rgba(255,48,64,.08); border:1px solid rgba(255,48,64,.22); }
+.answer-feedback.incorrect span { color:#D4D4D8; }
 button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:focus-visible) {
     outline:2px solid #FF8791 !important; outline-offset:3px; }
 .control-divider { height:1px; background:var(--border); margin:.5rem 0; }

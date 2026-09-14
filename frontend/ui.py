@@ -35,7 +35,26 @@ def bars(items, unit="", maximum=100):
         for label, value in items) + '</div>'
 
 
-def bar_chart(labels, values, *, horizontal=False, value_suffix="", hover_details=None):
+def compact_chart_label(label, max_characters=34):
+    """Shorten only the visible axis label; callers can retain full hover text."""
+    label = str(label)
+    if len(label) <= max_characters:
+        return label
+    shortened = label[:max_characters].rsplit(" ", 1)[0]
+    return f"{shortened or label[:max_characters]}…"
+
+
+def bar_chart(
+    labels,
+    values,
+    *,
+    horizontal=False,
+    value_suffix="",
+    hover_details=None,
+    hover_labels=None,
+    left_margin=None,
+    height=270,
+):
     """Create a compact dark-theme Plotly bar chart."""
     bar = go.Bar(
         x=values if horizontal else labels,
@@ -45,16 +64,22 @@ def bar_chart(labels, values, *, horizontal=False, value_suffix="", hover_detail
         text=[f"{value:g}{value_suffix}" for value in values],
         textposition="auto",
         customdata=hover_details,
+        hovertext=hover_labels or labels,
         hovertemplate=(
-            "%{y}<br>%{x:g}" + value_suffix
+            "%{hovertext}<br>%{x:g}" + value_suffix
             if horizontal
-            else "%{x}<br>%{y:g}" + value_suffix
+            else "%{hovertext}<br>%{y:g}" + value_suffix
         ) + ("<br>%{customdata}" if hover_details else "") + "<extra></extra>",
     )
     figure = go.Figure(bar)
     figure.update_layout(
-        height=270,
-        margin={"l": 12, "r": 12, "t": 8, "b": 12},
+        height=height,
+        margin={
+            "l": left_margin if left_margin is not None else (150 if horizontal else 36),
+            "r": 16,
+            "t": 8,
+            "b": 24,
+        },
         paper_bgcolor="#121216",
         plot_bgcolor="#121216",
         font={"color": "#D4D4D8", "size": 11},
@@ -71,6 +96,7 @@ def bar_chart(labels, values, *, horizontal=False, value_suffix="", hover_detail
             "zerolinecolor": "rgba(255,255,255,.08)",
             "fixedrange": True,
             "automargin": True,
+            "tickfont": {"size": 10},
         },
     )
     return figure
@@ -180,18 +206,21 @@ h1,h2,h3 { color:var(--text); letter-spacing:-.035em; }
 [data-testid="stMain"] label[data-testid="stRadioOption"] strong { display:inline-flex; align-items:center; justify-content:center;
     width:30px; height:30px; background:#232329; border:1px solid var(--border); border-radius:6px; font-size:.78rem; color:#BEBEC7; }
 [data-testid="stMain"] label[data-testid="stRadioOption"] code { background:none; padding:0; color:var(--text); font-size:1.05rem; }
+[data-testid="stMain"] label[data-testid="stRadioOption"] code { white-space:normal; overflow-wrap:anywhere; }
 [data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:checked) { background:rgba(139,16,26,.14); border-color:var(--red); }
 [data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:checked) strong { background:#8B101A; color:white; border-color:#FF3040; }
-[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:disabled) { cursor:default; opacity:.72; }
-[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:disabled:checked) { opacity:1; }
+[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:disabled) { cursor:default; opacity:.52; background:#141418; }
+[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:disabled:checked) {
+    opacity:1; background:rgba(139,16,26,.16); box-shadow:inset 3px 0 #FF3040; }
 .answer-feedback { display:flex; align-items:center; gap:.7rem; padding:.8rem 1rem; margin:.8rem 0 .2rem;
     border-radius:8px; font-size:.76rem; }
 .answer-feedback.correct { color:#86EFAC; background:rgba(34,197,94,.09); border:1px solid rgba(34,197,94,.24); font-weight:700; }
 .answer-feedback.incorrect { color:#FDA4AF; background:rgba(255,48,64,.08); border:1px solid rgba(255,48,64,.22); }
-.answer-feedback.incorrect span { color:#D4D4D8; }
+.answer-feedback span { color:#D4D4D8; min-width:0; overflow-wrap:anywhere; font-weight:500; }
 button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:focus-visible) {
     outline:2px solid #FF8791 !important; outline-offset:3px; }
-.control-divider { height:1px; background:var(--border); margin:.5rem 0; }
+[data-testid="stExpander"] summary:focus-visible { outline:2px solid #FF8791; outline-offset:2px; border-radius:6px; }
+.control-divider { height:1px; background:var(--border); margin:.8rem 0 .65rem; }
 .control-status { text-align:center; font-size:.7rem; color:var(--muted); }
 .control-status span { color:var(--red); margin:0 .35rem; }
 [data-testid="stMain"] [data-testid="stButton"] button { border-radius:8px; min-height:42px;
@@ -216,7 +245,7 @@ button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:h
 .panel h3 { font-size:.95rem; margin:0; padding:0; letter-spacing:-.02em; }
 .panel-subtitle { font-size:.65rem; color:var(--muted); margin:.4rem 0 1.2rem; }
 div[class*="st-key-analytics_"] { background:#121216; border-color:var(--border) !important;
-    border-radius:12px; padding:1rem 1.15rem; margin-bottom:1rem; }
+    border-radius:12px; padding:1rem 1.15rem; margin-bottom:1rem; min-width:0; overflow:visible; }
 .chart-heading h3 { font-size:.95rem; margin:0; padding:0; letter-spacing:-.02em; }
 .chart-heading p { font-size:.65rem; color:var(--muted); margin:.4rem 0 .3rem; }
 .bar-list { display:grid; gap:1rem; }
@@ -247,7 +276,9 @@ div[class*="st-key-analytics_"] { background:#121216; border-color:var(--border)
 .insight-row { display:flex; align-items:center; gap:.8rem; padding:.7rem 0; border-top:1px solid var(--border); }
 .index { color:#FF8791; font-size:.65rem; background:rgba(139,16,26,.15); padding:.5rem; border-radius:6px; }
 .insight-row strong { font-size:.76rem; font-weight:550; }
-.insight-row p { font-size:.68rem; color:var(--muted); margin:.2rem 0 0; }
+.insight-row > div { min-width:0; }
+.insight-row strong { overflow-wrap:anywhere; }
+.insight-row p { font-size:.68rem; color:var(--muted); margin:.2rem 0 0; overflow-wrap:anywhere; }
 .topic-performance-row { padding:.75rem 0; border-top:1px solid var(--border); }
 .topic-performance-row:first-child { border-top:0; padding-top:0; }
 .topic-performance-row > div:first-child { display:flex; justify-content:space-between; gap:1rem;
@@ -275,7 +306,9 @@ div[class*="st-key-analytics_"] { background:#121216; border-color:var(--border)
 .review-cell.wide { grid-column:1 / -1; }
 .review-cell.correct { border-color:rgba(34,197,94,.22); }
 .review-cell.incorrect { border-color:rgba(255,48,64,.24); }
-.teacher-table { margin-top:.2rem; }
+.st-key-teacher_table { background:#121216; border-color:var(--border) !important; border-radius:12px;
+    padding:1rem 1.15rem; margin-top:.2rem; overflow:hidden; }
+[data-testid="stDataFrame"] { max-width:100%; }
 .insight-summary { display:grid; gap:.65rem; }
 .insight-summary div { display:flex; gap:.7rem; align-items:flex-start; padding:.65rem .75rem;
     border:1px solid var(--border); border-radius:8px; background:#17171C; }
@@ -301,6 +334,11 @@ div[class*="st-key-analytics_"] { background:#121216; border-color:var(--border)
     .score-panel > .sample-pill { margin-left:0; } .score-ring { width:110px; height:110px; }
     .review-grid { grid-template-columns:1fr; } .review-cell.wide { grid-column:auto; }
     .st-key-question_card { padding:1rem !important; } .exam-top { flex-wrap:wrap; gap:.5rem; }
+    [data-testid="stMain"] [data-testid="stRadio"] label[data-testid="stRadioOption"] {
+        min-height:52px; padding:.65rem .75rem; }
+    [data-testid="stMain"] label[data-testid="stRadioOption"] code { font-size:.92rem; }
+    .answer-feedback { align-items:flex-start; flex-wrap:wrap; padding:.72rem .8rem; }
+    div[class*="st-key-analytics_"],.st-key-teacher_table { padding:.8rem; }
     .app-footer { flex-direction:column; } .control-status { text-align:left; }
 }
 @media (prefers-reduced-motion:reduce) {

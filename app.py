@@ -1,4 +1,5 @@
 from html import escape
+import random
 
 import streamlit as st
 
@@ -12,7 +13,15 @@ from frontend.analytics import (
     weakest_topic,
 )
 from frontend.dummy_data import DEMO_CLASS_SESSIONS, QUESTION_FIXTURES
-from frontend.ui import apply_styles, bar_chart, chart_panel, heading, metrics, panel
+from frontend.ui import (
+    apply_styles,
+    bar_chart,
+    chart_panel,
+    compact_chart_label,
+    heading,
+    metrics,
+    panel,
+)
 
 
 st.set_page_config(page_title="404 — Exam Not Found", page_icon="◈", layout="wide")
@@ -27,27 +36,82 @@ EXAM_STATE_DEFAULTS = {
     "exam_started": False,
     "current_question_index": 0,
     "selected_answer": None,
+    "selected_original_index": None,
     "current_question_submitted": False,
     "answers": [],
     "exam_complete": False,
+    "option_orders": {},
 }
+
+
+def fresh_state_value(value):
+    return value.copy() if isinstance(value, (dict, list)) else value
 
 
 def initialize_exam_state():
     for key, value in EXAM_STATE_DEFAULTS.items():
         if key not in st.session_state:
-            st.session_state[key] = value.copy() if isinstance(value, list) else value
+            st.session_state[key] = fresh_state_value(value)
+
+
+def valid_option_order(order, option_count):
+    return isinstance(order, (list, tuple)) and sorted(order) == list(range(option_count))
+
+
+def shuffled_option_order(option_count):
+    """Return a non-identity permutation created only during attempt setup."""
+    original_order = list(range(option_count))
+    order = original_order.copy()
+    random.SystemRandom().shuffle(order)
+    if option_count > 1 and order == original_order:
+        order = order[1:] + order[:1]
+    return tuple(order)
+
+
+def build_attempt_option_orders(existing_orders=None):
+    """Build a complete mapping, preserving any valid orders from an active attempt."""
+    existing_orders = existing_orders or {}
+    return {
+        question_id: (
+            tuple(existing_orders[question_id])
+            if valid_option_order(existing_orders.get(question_id), len(question.options))
+            else shuffled_option_order(len(question.options))
+        )
+        for question_id, question in QUESTION_FIXTURES.items()
+    }
 
 
 def reset_exam():
+    previous_orders = st.session_state.get("option_orders", {})
     for key, value in EXAM_STATE_DEFAULTS.items():
-        st.session_state[key] = value.copy() if isinstance(value, list) else value
+        st.session_state[key] = fresh_state_value(value)
+    new_orders = build_attempt_option_orders()
+    while previous_orders and new_orders == previous_orders:
+        new_orders = build_attempt_option_orders()
+    st.session_state.option_orders = new_orders
     for key in list(st.session_state):
         if key.startswith("exam_answer_"):
             del st.session_state[key]
 
 
+def option_order_for(question_id, option_count):
+    """Read the immutable order created when this assessment attempt started."""
+    saved_order = st.session_state.option_orders.get(question_id)
+    if not valid_option_order(saved_order, option_count):
+        raise RuntimeError("Assessment option order was not initialized correctly.")
+    return saved_order
+
+
 initialize_exam_state()
+
+# Upgrade an already-active pre-C4 session once without replacing any valid order.
+if st.session_state.exam_started and any(
+    not valid_option_order(
+        st.session_state.option_orders.get(question_id), len(question.options)
+    )
+    for question_id, question in QUESTION_FIXTURES.items()
+):
+    st.session_state.option_orders = build_attempt_option_orders(st.session_state.option_orders)
 
 
 if "view" not in st.session_state:
@@ -120,6 +184,8 @@ if st.session_state.view == "Exam":
     else:
         question_index = st.session_state.current_question_index
         question_id, question = question_items[question_index]
+        option_order = option_order_for(question_id, len(question.options))
+        displayed_options = [question.options[original_index] for original_index in option_order]
         progress = (question_index + 1) / question_count
         progress_percent = round(progress * 100)
         header, restart = st.columns([4, 1.25], vertical_alignment="center")
@@ -155,30 +221,54 @@ if st.session_state.view == "Exam":
                     answer for answer in st.session_state.answers if answer["question_id"] == question_id
                 )
             persisted_answer = (
-                submitted_response["selected_option_index"]
+                submitted_response.get(
+                    "displayed_selected_index",
+                    option_order.index(submitted_response["selected_option_index"]),
+                )
                 if submitted_response is not None
-                else st.session_state.selected_answer
+                else (
+                    option_order.index(st.session_state.selected_original_index)
+                    if st.session_state.selected_original_index is not None
+                    else st.session_state.selected_answer
+                )
             )
             selected_answer = st.radio(
                 "Choose one answer",
                 range(len(question.options)),
                 index=persisted_answer,
-                format_func=lambda index: f"**{chr(65 + index)}**　 `{question.options[index].text}`",
+                format_func=lambda index: f"**{chr(65 + index)}**　 `{displayed_options[index].text}`",
                 label_visibility="collapsed",
                 key=f"exam_answer_{question_id}",
                 disabled=st.session_state.current_question_submitted,
             )
             st.session_state.selected_answer = selected_answer
+            st.session_state.selected_original_index = (
+                option_order[selected_answer] if selected_answer is not None else None
+            )
 
             if st.session_state.current_question_submitted:
-                correct_index = submitted_response["correct_option_index"]
+                correct_original_index = submitted_response.get(
+                    "correct_original_index", submitted_response["correct_option_index"]
+                )
+                correct_displayed_index = submitted_response.get(
+                    "correct_displayed_index", option_order.index(correct_original_index)
+                )
+                correct_text = escape(
+                    submitted_response.get(
+                        "correct_answer", question.options[correct_original_index].text
+                    )
+                )
                 if submitted_response["correct"]:
-                    st.markdown('<div class="answer-feedback correct">Correct</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div class="answer-feedback correct"><strong>Correct</strong>'
+                        f'<span>{chr(65 + correct_displayed_index)}. {correct_text}</span></div>',
+                        unsafe_allow_html=True,
+                    )
                 else:
-                    correct_text = escape(question.options[correct_index].text)
                     st.markdown(
                         f'<div class="answer-feedback incorrect"><strong>Incorrect</strong>'
-                        f'<span>Correct answer: {chr(65 + correct_index)}. {correct_text}</span></div>',
+                        f'<span>Correct answer: {chr(65 + correct_displayed_index)}. '
+                        f'{correct_text}</span></div>',
                         unsafe_allow_html=True,
                     )
 
@@ -198,17 +288,32 @@ if st.session_state.view == "Exam":
                         disabled=selected_answer is None,
                         use_container_width=True,
                     ):
-                        correct_index = next(i for i, option in enumerate(question.options) if option.correct)
-                        is_correct = selected_answer == correct_index
+                        selected_original_index = st.session_state.selected_original_index
+                        selected_option = question.options[selected_original_index]
+                        correct_original_index = next(
+                            i for i, option in enumerate(question.options) if option.correct
+                        )
+                        correct_displayed_index = option_order.index(correct_original_index)
+                        correct_option = question.options[correct_original_index]
+                        is_correct = bool(selected_option.correct)
                         if not any(answer["question_id"] == question_id for answer in st.session_state.answers):
                             st.session_state.answers.append({
                                 "question_id": question_id,
                                 "question_index": question_index,
                                 "topic": question.topic,
-                                "selected_option_index": selected_answer,
-                                "correct_option_index": correct_index,
+                                "displayed_selected_index": selected_answer,
+                                "selected_original_index": selected_original_index,
+                                "selected_option_index": selected_original_index,
+                                "correct_original_index": correct_original_index,
+                                "correct_option_index": correct_original_index,
+                                "correct_displayed_index": correct_displayed_index,
+                                "selected_answer": selected_option.text,
+                                "selected_answer_text": selected_option.text,
+                                "correct_answer": correct_option.text,
+                                "correct_answer_text": correct_option.text,
+                                "option_order": list(option_order),
                                 "correct": is_correct,
-                                "misconception": None if is_correct else question.options[selected_answer].misconception,
+                                "misconception": None if is_correct else selected_option.misconception,
                                 "difficulty_score": question.difficulty_score,
                             })
                         st.session_state.current_question_submitted = True
@@ -217,6 +322,7 @@ if st.session_state.view == "Exam":
                     if st.button("Next Question →", type="primary", use_container_width=True):
                         st.session_state.current_question_index += 1
                         st.session_state.selected_answer = None
+                        st.session_state.selected_original_index = None
                         st.session_state.current_question_submitted = False
                         st.rerun()
                 elif st.button("Finish Assessment →", type="primary", use_container_width=True):
@@ -334,7 +440,11 @@ elif st.session_state.view == "Results":
         )
         for review in reviews:
             status = "Correct" if review["correct"] else "Incorrect"
-            difficulty = review["difficulty"] if review["difficulty"] is not None else "Not available"
+            difficulty = (
+                f'{review["difficulty"]} / 5'
+                if review["difficulty"] is not None
+                else "Not available"
+            )
             with st.expander(
                 f'Question {review["question_number"]:02d} · {review["topic"].title()} · {status}'
             ):
@@ -348,7 +458,7 @@ elif st.session_state.view == "Results":
                     f'<p class="review-question">{escape(review["question"])}</p>'
                     '<div class="review-grid">'
                     f'<div class="review-cell"><small>Topic</small><span>{escape(review["topic"].title())}</span></div>'
-                    f'<div class="review-cell"><small>Difficulty</small><span>{escape(str(difficulty))} / 5</span></div>'
+                    f'<div class="review-cell"><small>Difficulty</small><span>{escape(difficulty)}</span></div>'
                     f'<div class="review-cell {"correct" if review["correct"] else "incorrect"}">'
                     f'<small>Your answer · {status}</small><span>{escape(review["student_answer"])}</span></div>'
                     f'<div class="review-cell correct"><small>Correct answer</small>'
@@ -386,13 +496,16 @@ else:
     )
     misconception_rows = class_data["misconceptions"][:5]
     misconception_labels = [
-        f'{row["label"]} · {row["students_affected"]}/{completed_count} students'
+        f'{compact_chart_label(row["label"])}<br>{row["students_affected"]}/{completed_count} students'
         for row in misconception_rows
     ]
     misconception_figure = bar_chart(
         misconception_labels,
         [row["occurrences"] for row in misconception_rows],
         horizontal=True,
+        hover_labels=[row["label"] for row in misconception_rows],
+        left_margin=205,
+        height=292,
         hover_details=[
             f'{row["occurrences"]} occurrences · {row["students_affected"]} students '
             f'({row["student_percentage"]:g}% of completed)'

@@ -1,8 +1,9 @@
-"""Lightweight presentation helpers. All dashboard values are illustrative."""
+"""Lightweight presentation helpers for the Streamlit frontend."""
 
 from html import escape
 
 import streamlit as st
+import plotly.graph_objects as go
 
 
 def apply_styles():
@@ -32,6 +33,63 @@ def bars(items, unit="", maximum=100):
         f'<div class="bar-item"><div><span>{escape(label)}</span><strong>{value}{unit}</strong></div>'
         f'<div class="bar-track"><i style="width:{min(100, max(0, value / maximum * 100))}%"></i></div></div>'
         for label, value in items) + '</div>'
+
+
+def bar_chart(labels, values, *, horizontal=False, value_suffix="", hover_details=None):
+    """Create a compact dark-theme Plotly bar chart."""
+    bar = go.Bar(
+        x=values if horizontal else labels,
+        y=labels if horizontal else values,
+        orientation="h" if horizontal else "v",
+        marker={"color": "#FF3040", "line": {"color": "#FF6571", "width": 1}},
+        text=[f"{value:g}{value_suffix}" for value in values],
+        textposition="auto",
+        customdata=hover_details,
+        hovertemplate=(
+            "%{y}<br>%{x:g}" + value_suffix
+            if horizontal
+            else "%{x}<br>%{y:g}" + value_suffix
+        ) + ("<br>%{customdata}" if hover_details else "") + "<extra></extra>",
+    )
+    figure = go.Figure(bar)
+    figure.update_layout(
+        height=270,
+        margin={"l": 12, "r": 12, "t": 8, "b": 12},
+        paper_bgcolor="#121216",
+        plot_bgcolor="#121216",
+        font={"color": "#D4D4D8", "size": 11},
+        showlegend=False,
+        bargap=0.28,
+        hoverlabel={"bgcolor": "#17171C", "bordercolor": "#FF3040"},
+        xaxis={
+            "gridcolor": "rgba(255,255,255,.06)",
+            "zerolinecolor": "rgba(255,255,255,.08)",
+            "fixedrange": True,
+        },
+        yaxis={
+            "gridcolor": "rgba(255,255,255,.06)",
+            "zerolinecolor": "rgba(255,255,255,.08)",
+            "fixedrange": True,
+            "automargin": True,
+        },
+    )
+    return figure
+
+
+def chart_panel(title, subtitle, figure, key):
+    """Render a Plotly figure in a panel consistent with the existing UI."""
+    with st.container(border=True, key=f"analytics_{key}"):
+        st.markdown(
+            f'<div class="chart-heading"><h3>{escape(title)}</h3>'
+            f'<p>{escape(subtitle)}</p></div>',
+            unsafe_allow_html=True,
+        )
+        st.plotly_chart(
+            figure,
+            width="stretch",
+            config={"displayModeBar": False, "responsive": True},
+            key=f"plotly_{key}",
+        )
 
 
 STYLES = """
@@ -146,7 +204,7 @@ button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:h
 .page-heading p { margin:.4rem 0 0; color:var(--muted); font-size:.78rem; }
 .sample-pill { font-size:.59rem; letter-spacing:.07em; text-transform:uppercase; color:#B7B7C0;
     border:1px solid var(--border); border-radius:5px; padding:.4rem .6rem; white-space:nowrap; }
-.metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:1rem; }
+.metric-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:14px; margin-bottom:1rem; }
 .metric-card,.panel,.score-panel { background:#121216; border:1px solid var(--border); border-radius:12px;
     transition:transform 200ms,border-color 200ms,box-shadow 200ms; }
 .metric-card { padding:1.1rem 1.2rem; }
@@ -157,6 +215,10 @@ button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:h
 .panel { padding:1.3rem 1.4rem; margin-bottom:1rem; }
 .panel h3 { font-size:.95rem; margin:0; padding:0; letter-spacing:-.02em; }
 .panel-subtitle { font-size:.65rem; color:var(--muted); margin:.4rem 0 1.2rem; }
+div[class*="st-key-analytics_"] { background:#121216; border-color:var(--border) !important;
+    border-radius:12px; padding:1rem 1.15rem; margin-bottom:1rem; }
+.chart-heading h3 { font-size:.95rem; margin:0; padding:0; letter-spacing:-.02em; }
+.chart-heading p { font-size:.65rem; color:var(--muted); margin:.4rem 0 .3rem; }
 .bar-list { display:grid; gap:1rem; }
 .bar-item > div:first-child { display:flex; justify-content:space-between; gap:1rem; font-size:.72rem; color:#C6C6CE; margin-bottom:.45rem; }
 .bar-item strong { font-size:.7rem; color:#E7E7EC; }
@@ -186,6 +248,39 @@ button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:h
 .index { color:#FF8791; font-size:.65rem; background:rgba(139,16,26,.15); padding:.5rem; border-radius:6px; }
 .insight-row strong { font-size:.76rem; font-weight:550; }
 .insight-row p { font-size:.68rem; color:var(--muted); margin:.2rem 0 0; }
+.topic-performance-row { padding:.75rem 0; border-top:1px solid var(--border); }
+.topic-performance-row:first-child { border-top:0; padding-top:0; }
+.topic-performance-row > div:first-child { display:flex; justify-content:space-between; gap:1rem;
+    color:#E7E7EC; font-size:.75rem; }
+.topic-performance-row > div:first-child strong { color:#FF8791; }
+.topic-performance-row small { display:block; color:var(--muted); font-size:.62rem; margin:.3rem 0 .45rem; }
+.empty-state { background:#121216; border:1px solid var(--border); border-radius:16px; padding:2.2rem;
+    margin:.4rem 0 1rem; text-align:center; box-shadow:0 12px 42px rgba(139,16,26,.08); }
+.empty-state .empty-mark { width:48px; height:48px; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 1rem; border:1px solid rgba(255,48,64,.25); border-radius:50%; color:#FF6571;
+    background:rgba(139,16,26,.13); font-size:1.15rem; }
+.empty-state h3 { margin:0 0 .5rem; font-size:1.2rem; }
+.empty-state p { color:var(--muted); font-size:.76rem; margin:0; }
+.section-heading { margin:1.2rem 0 .7rem; }
+.section-heading h3 { margin:0; font-size:1rem; }
+.section-heading p { margin:.35rem 0 0; color:var(--muted); font-size:.66rem; }
+[data-testid="stExpander"] { background:#121216; border-color:var(--border) !important; border-radius:10px !important; }
+[data-testid="stExpander"] summary { font-size:.76rem; color:#E7E7EC; }
+.review-question { font-size:.78rem; color:#F1F1F3; line-height:1.55; margin:.15rem 0 .8rem; }
+.review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
+.review-cell { background:#17171C; border:1px solid var(--border); border-radius:8px; padding:.7rem .8rem; }
+.review-cell small { display:block; color:var(--muted); font-size:.57rem; letter-spacing:.07em;
+    text-transform:uppercase; margin-bottom:.3rem; }
+.review-cell span { color:#E7E7EC; font-size:.7rem; line-height:1.45; }
+.review-cell.wide { grid-column:1 / -1; }
+.review-cell.correct { border-color:rgba(34,197,94,.22); }
+.review-cell.incorrect { border-color:rgba(255,48,64,.24); }
+.teacher-table { margin-top:.2rem; }
+.insight-summary { display:grid; gap:.65rem; }
+.insight-summary div { display:flex; gap:.7rem; align-items:flex-start; padding:.65rem .75rem;
+    border:1px solid var(--border); border-radius:8px; background:#17171C; }
+.insight-summary b { color:#FF6571; font-size:.68rem; }
+.insight-summary span { color:#D4D4D8; font-size:.72rem; line-height:1.5; }
 .app-footer { display:flex; justify-content:space-between; gap:1rem; padding:1.4rem 0 .3rem; border-top:1px solid var(--border);
     margin-top:.7rem; font-size:.59rem; color:var(--muted); }
 .app-footer > span:first-child { letter-spacing:.1em; white-space:nowrap; }
@@ -204,6 +299,7 @@ button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:h
     .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .page-heading,.score-panel { flex-wrap:wrap; } .score-panel { gap:1rem; padding:1.2rem; }
     .score-panel > .sample-pill { margin-left:0; } .score-ring { width:110px; height:110px; }
+    .review-grid { grid-template-columns:1fr; } .review-cell.wide { grid-column:auto; }
     .st-key-question_card { padding:1rem !important; } .exam-top { flex-wrap:wrap; gap:.5rem; }
     .app-footer { flex-direction:column; } .control-status { text-align:left; }
 }

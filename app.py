@@ -2,8 +2,17 @@ from html import escape
 
 import streamlit as st
 
-from frontend.dummy_data import QUESTION_FIXTURES
-from frontend.ui import apply_styles, bars, heading, metrics, panel
+from frontend.analytics import (
+    calculate_score,
+    class_analytics,
+    misconception_counts,
+    question_review,
+    strongest_topic,
+    topic_performance,
+    weakest_topic,
+)
+from frontend.dummy_data import DEMO_CLASS_SESSIONS, QUESTION_FIXTURES
+from frontend.ui import apply_styles, bar_chart, chart_panel, heading, metrics, panel
 
 
 st.set_page_config(page_title="404 — Exam Not Found", page_icon="◈", layout="wide")
@@ -215,56 +224,267 @@ if st.session_state.view == "Exam":
                     st.rerun()
 
 elif st.session_state.view == "Results":
-    heading("Assessment Complete", "A clearer picture of your progress, and where to go next.", "SAMPLE RESULTS")
-    st.markdown(
-        '<section class="score-panel"><div class="score-ring"><div><strong>80<span>%</span></strong>'
-        '<small>ACCURACY</small></div></div><div><div class="eyebrow">A STRONG FOUNDATION</div>'
-        '<div class="score-number">8 <span>/ 10</span></div>'
-        '<p>Keep building on what you know.<br>Your next focus: comparison operators.</p></div>'
-        '<span class="sample-pill">Illustrative results</span></section>',
-        unsafe_allow_html=True,
-    )
-    metrics([("Score", "8 / 10", "Correct answers"), ("Accuracy", "80%", "Overall performance"),
-             ("Current Level", "3 / 5", "Sample difficulty level"), ("Questions", "10", "In this example")])
-    left, right = st.columns([1.25, 1], gap="medium")
-    with left:
-        panel("Performance Overview", "Sample accuracy by topic", bars([
-            ("Variables", 100), ("Loops", 80), ("Comparisons", 60)], unit="%"))
-        panel("Misconceptions Detected", "Two example learning signals",
-              '<div class="insight-row"><span class="index">01</span><div><strong>Assignment vs. equality</strong>'
-              '<p>Distinguishing = from ==</p></div></div>'
-              '<div class="insight-row"><span class="index">02</span><div><strong>Loop boundaries</strong>'
-              '<p>Remembering that range excludes its endpoint</p></div></div>')
-    with right:
-        panel("Strongest Topic", "BUILD ON THIS", '<div class="topic-title">Variables & assignment</div>'
-              '<p class="body-copy">A solid understanding of how values are stored and assigned.</p>'
-              '<span class="tag">100% · Sample accuracy</span>')
-        panel("Needs Attention", "YOUR NEXT FOCUS", '<div class="topic-title">Comparison operators</div>'
-              '<p class="body-copy">Review how equality and inequality checks differ from assignment.</p>'
-              '<span class="tag accent">Suggested review</span>')
+    if not st.session_state.exam_complete or not st.session_state.answers:
+        result_action = "Continue Assessment" if st.session_state.exam_started else "Start Assessment"
+        heading(
+            "Assessment Results",
+            "Complete the assessment to unlock your session analytics.",
+            "CURRENT SESSION",
+        )
+        st.markdown(
+            '<section class="empty-state"><div class="empty-mark">◇</div>'
+            '<h3>No completed assessment yet.</h3>'
+            '<p>Your score, topic performance, and learning signals will appear here.</p></section>',
+            unsafe_allow_html=True,
+        )
+        if st.button(result_action, type="primary", use_container_width=True):
+            navigate("Exam")
+            st.rerun()
+    else:
+        responses = st.session_state.answers
+        score = calculate_score(responses)
+        topics = topic_performance(responses)
+        misconceptions = misconception_counts(responses)
+        strongest = strongest_topic(topics)
+        weakest = weakest_topic(topics)
+        accuracy_text = f'{score["accuracy"]:g}'
+
+        heading(
+            "Assessment Complete",
+            "Your performance from this completed assessment session.",
+            "REAL SESSION DATA",
+        )
+        st.markdown(
+            f'<section class="score-panel"><div class="score-ring" '
+            f'style="background:conic-gradient(#FF3040 {score["accuracy"]}%,#292930 0)">'
+            f'<div><strong>{accuracy_text}<span>%</span></strong><small>ACCURACY</small></div></div>'
+            '<div><div class="eyebrow">YOUR COMPLETED ASSESSMENT</div>'
+            f'<div class="score-number">{score["correct"]} <span>/ {score["total"]}</span></div>'
+            '<p>Results are calculated from your submitted answers in this session.</p></div>'
+            '<span class="sample-pill">Current session</span></section>',
+            unsafe_allow_html=True,
+        )
+        metrics([
+            ("Score", f'{score["correct"]} / {score["total"]}', "Correct answers / attempted"),
+            ("Accuracy", f'{score["accuracy"]:g}%', "Overall performance"),
+            ("Correct", str(score["correct"]), "Submitted answers"),
+            ("Incorrect", str(score["incorrect"]), "Submitted answers"),
+            ("Average Difficulty", f'{score["average_difficulty"]:g} / 5', "Across answered questions"),
+        ])
+
+        topic_content = "".join(
+            '<div class="topic-performance-row">'
+            f'<div><span>{escape(topic.title())}</span><strong>{values["accuracy"]:g}%</strong></div>'
+            f'<small>{values["attempted"]} attempted · {values["correct"]} correct · '
+            f'{values["incorrect"]} incorrect · {values["error_rate"]:g}% error rate</small>'
+            f'<div class="bar-track"><i style="width:{values["accuracy"]}%"></i></div></div>'
+            for topic, values in topics.items()
+        )
+        if misconceptions:
+            misconception_content = "".join(
+                '<div class="insight-row">'
+                f'<span class="index">{index:02d}</span><div><strong>{escape(item["label"])}</strong>'
+                f'<p>{item["occurrences"]} occurrence{"s" if item["occurrences"] != 1 else ""} · '
+                f'Topic{"s" if len(item["topics"]) != 1 else ""}: '
+                f'{escape(", ".join(topic.title() for topic in item["topics"]) or "Unavailable")}</p></div></div>'
+                for index, item in enumerate(misconceptions, start=1)
+            )
+            misconception_subtitle = "Incorrect selected answers only · most frequent first"
+        else:
+            misconception_content = (
+                '<p class="body-copy">No misconceptions detected in this assessment.</p>'
+            )
+            misconception_subtitle = "No incorrect-answer learning signals"
+
+        left, right = st.columns([1.25, 1], gap="medium")
+        with left:
+            panel("Performance by Topic", "Attempted, correct, incorrect, and accuracy", topic_content)
+            panel("Misconceptions Detected", misconception_subtitle, misconception_content)
+        with right:
+            strongest_values = topics[strongest]
+            panel(
+                "Strongest Topic",
+                "HIGHEST ACCURACY · TIES SORTED A–Z",
+                f'<div class="topic-title">{escape(strongest.title())}</div>'
+                f'<p class="body-copy">{strongest_values["correct"]} correct of '
+                f'{strongest_values["attempted"]} attempted.</p>'
+                f'<span class="tag">{strongest_values["accuracy"]:g}% accuracy</span>',
+            )
+            weakest_values = topics[weakest]
+            attention_copy = (
+                "No errors recorded. This topic is listed by the deterministic accuracy tie-break."
+                if weakest_values["incorrect"] == 0
+                else f'Review your incorrect responses in this topic first: '
+                     f'{weakest_values["incorrect"]} of {weakest_values["attempted"]} '
+                     f'were incorrect ({weakest_values["error_rate"]:g}% error rate).'
+            )
+            panel(
+                "Needs Attention",
+                "LOWEST ACCURACY · TIES SORTED A–Z",
+                f'<div class="topic-title">{escape(weakest.title())}</div>'
+                f'<p class="body-copy">{escape(attention_copy)}</p>'
+                f'<span class="tag accent">{weakest_values["accuracy"]:g}% accuracy</span>',
+            )
+
+        reviews = question_review(responses, QUESTION_FIXTURES)
+        st.markdown(
+            '<div class="section-heading"><h3>Question Review</h3>'
+            '<p>Your submitted answer compared with the correct answer.</p></div>',
+            unsafe_allow_html=True,
+        )
+        for review in reviews:
+            status = "Correct" if review["correct"] else "Incorrect"
+            difficulty = review["difficulty"] if review["difficulty"] is not None else "Not available"
+            with st.expander(
+                f'Question {review["question_number"]:02d} · {review["topic"].title()} · {status}'
+            ):
+                misconception_review = (
+                    '<div class="review-cell wide incorrect"><small>Misconception</small>'
+                    f'<span>{escape(review["misconception"])}</span></div>'
+                    if review["misconception"]
+                    else ""
+                )
+                st.markdown(
+                    f'<p class="review-question">{escape(review["question"])}</p>'
+                    '<div class="review-grid">'
+                    f'<div class="review-cell"><small>Topic</small><span>{escape(review["topic"].title())}</span></div>'
+                    f'<div class="review-cell"><small>Difficulty</small><span>{escape(str(difficulty))} / 5</span></div>'
+                    f'<div class="review-cell {"correct" if review["correct"] else "incorrect"}">'
+                    f'<small>Your answer · {status}</small><span>{escape(review["student_answer"])}</span></div>'
+                    f'<div class="review-cell correct"><small>Correct answer</small>'
+                    f'<span>{escape(review["correct_answer"])}</span></div>{misconception_review}</div>',
+                    unsafe_allow_html=True,
+                )
 
 else:
-    heading("Teacher Dashboard", "A class-wide perspective. A more focused next lesson.", "SAMPLE CLASS DATA")
-    metrics([("Students", "32", "In the sample class"), ("Average Score", "7.6 / 10", "Sample class average"),
-             ("Completion Rate", "88%", "28 of 32 students"), ("Misconceptions", "6", "Distinct sample patterns")])
+    class_data = class_analytics(DEMO_CLASS_SESSIONS)
+    completed_count = class_data["completed_assessments"]
+
+    heading(
+        "Teacher Dashboard",
+        "A deterministic class analytics preview for teaching decisions.",
+        "DEMO CLASS DATA · NOT LIVE",
+    )
+    metrics([
+        ("Students", str(class_data["students"]), "Total fictional class roster"),
+        ("Completed Assessments", str(completed_count), "Completed demo assessments"),
+        ("Completion Rate", f'{class_data["completion_rate"]:g}%',
+         f'{completed_count} of {class_data["students"]} demo students'),
+        ("Average Accuracy", f'{class_data["average_accuracy"]:g}%', "Completed demo students only"),
+        ("Average Score", f'{class_data["average_correct"]:g} / {class_data["average_total"]:g}',
+         "Mean correct / mean attempted"),
+        ("Distinct Misconceptions", str(class_data["distinct_misconceptions"]), "Distinct incorrect-answer labels"),
+        ("Average Difficulty", f'{class_data["average_difficulty"]:g} / 5',
+         "Completed response average"),
+    ])
+
+    score_rows = class_data["score_distribution"]
+    score_figure = bar_chart(
+        [row["band"] for row in score_rows],
+        [row["students"] for row in score_rows],
+        hover_details=[f'{row["students"]} completed students' for row in score_rows],
+    )
+    misconception_rows = class_data["misconceptions"][:5]
+    misconception_labels = [
+        f'{row["label"]} · {row["students_affected"]}/{completed_count} students'
+        for row in misconception_rows
+    ]
+    misconception_figure = bar_chart(
+        misconception_labels,
+        [row["occurrences"] for row in misconception_rows],
+        horizontal=True,
+        hover_details=[
+            f'{row["occurrences"]} occurrences · {row["students_affected"]} students '
+            f'({row["student_percentage"]:g}% of completed)'
+            for row in misconception_rows
+        ],
+    )
+    topic_figure = bar_chart(
+        [row["topic"].title() for row in class_data["topics"]],
+        [row["error_rate"] for row in class_data["topics"]],
+        horizontal=True,
+        value_suffix="%",
+        hover_details=[
+            f'{row["incorrect"]} incorrect · {row["correct"]} correct · {row["attempted"]} attempted'
+            for row in class_data["topics"]
+        ],
+    )
+    difficulty_figure = bar_chart(
+        [f'Difficulty {row["difficulty"]:g}' for row in class_data["difficulty"]],
+        [row["percentage"] for row in class_data["difficulty"]],
+        value_suffix="%",
+        hover_details=[f'{row["count"]} responses' for row in class_data["difficulty"]],
+    )
+
     left, right = st.columns([1.25, 1], gap="medium")
     with left:
-        panel("Class Performance", "Illustrative student distribution by score",
-              '<div class="chart-columns" role="img" aria-label="Sample score distribution: '
-              '0–2: 1 student; 3–4: 2; 5–6: 5; 7–8: 12; 9–10: 8.">'
-              + "".join(f'<div class="chart-column"><span>{count}</span>'
-                        f'<i style="height:{count * 9}px"></i><small>{label}</small></div>'
-                        for label, count in [("0–2", 1), ("3–4", 2), ("5–6", 5), ("7–8", 12), ("9–10", 8)])
-              + '</div><div class="chart-foot">SCORE BAND <span>28 completed assessments</span></div>')
-        panel("Weakest Topics", "Sample incorrect-answer rate",
-              bars([("Comparison operators", 42), ("Loop boundaries", 35), ("Functions", 24)], unit="%"))
+        chart_panel(
+            "Class Performance",
+            f'Completed demo students per accuracy band · n={completed_count} students',
+            score_figure,
+            "class_performance",
+        )
+        attempts_per_topic = class_data["topics"][0]["attempted"] if class_data["topics"] else 0
+        chart_panel(
+            "Weakest Topics",
+            f'Incorrect responses ÷ attempts per topic · {attempts_per_topic} attempts each',
+            topic_figure,
+            "weakest_topics",
+        )
     with right:
-        panel("Most Common Misconceptions", "Illustrative number of students affected",
-              bars([("Assignment vs. equality", 12), ("Off-by-one boundaries", 9), ("Return vs. print", 6)], maximum=16))
-        panel("Difficulty Distribution", "Sample questions by difficulty level",
-              bars([("Level 1 · Recall", 15), ("Level 2 · Understand", 25), ("Level 3 · Apply", 35),
-                    ("Level 4 · Analyze", 20), ("Level 5 · Evaluate", 5)], unit="%"))
+        chart_panel(
+            "Most Common Misconceptions",
+            f'Bars show occurrences; labels show unique affected students · '
+            f'{class_data["incorrect_response_count"]} incorrect responses total',
+            misconception_figure,
+            "misconceptions",
+        )
+        chart_panel(
+            "Difficulty Distribution",
+            f'Response share by question difficulty · n={class_data["response_count"]} responses',
+            difficulty_figure,
+            "difficulty",
+        )
+
+    insight_content = '<div class="insight-summary">' + "".join(
+        f'<div><b>{index:02d}</b><span>{escape(insight)}</span></div>'
+        for index, insight in enumerate(class_data["insights"], start=1)
+    ) + '</div>'
+    panel(
+        "Class Insight Summary",
+        "Calculated from completed deterministic demo sessions",
+        insight_content,
+    )
+
+    teacher_rows = [
+        {
+            "Student": row["student"],
+            "Status": "Completed" if row["completed"] else "In progress",
+            "Score": row["score"],
+            "Accuracy": f'{row["accuracy"]:g}%',
+            "Correct": row["correct"],
+            "Incorrect": row["incorrect"],
+            "Main weak topic": row["main_weak_topic"].title() if row["main_weak_topic"] else "—",
+            "Misconceptions": row["misconceptions_count"],
+        }
+        for row in class_data["students_table"]
+    ]
+    with st.container(border=True, key="teacher_table"):
+        st.markdown(
+            '<div class="chart-heading"><h3>Student Performance</h3>'
+            '<p>All fictional demo sessions; in-progress scores reflect submitted responses only.</p></div>',
+            unsafe_allow_html=True,
+        )
+        st.dataframe(
+            teacher_rows,
+            hide_index=True,
+            width="stretch",
+            column_order=(
+                "Student", "Status", "Score", "Accuracy", "Correct", "Incorrect",
+                "Main weak topic", "Misconceptions",
+            ),
+        )
 
 st.markdown('<footer class="app-footer"><span>404 / EXAM NOT FOUND</span>'
-            '<span>Demo workspace · All result and dashboard figures are illustrative.</span></footer>',
+            '<span>Student results: current session · Teacher dashboard: deterministic demo data.</span></footer>',
             unsafe_allow_html=True)

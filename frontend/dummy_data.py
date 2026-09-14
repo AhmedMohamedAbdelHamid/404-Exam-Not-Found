@@ -113,3 +113,50 @@ QUESTION_FIXTURES: dict[str, QuestionOut] = {
 
 # Retained for compatibility with code importing the original sample fixture.
 DUMMY_QUESTION = QUESTION_FIXTURES["q001"]
+
+
+def _demo_responses(selected_options):
+    """Build a deterministic response log with the same shape as the C2 log."""
+    responses = []
+    for question_index, ((question_id, question), selected_index) in enumerate(
+        zip(QUESTION_FIXTURES.items(), selected_options)
+    ):
+        correct_index = next(index for index, option in enumerate(question.options) if option.correct)
+        is_correct = selected_index == correct_index
+        responses.append({
+            "question_id": question_id,
+            "question_index": question_index,
+            "topic": question.topic,
+            "selected_option_index": selected_index,
+            "correct_option_index": correct_index,
+            "correct": is_correct,
+            "misconception": None if is_correct else question.options[selected_index].misconception,
+            "difficulty_score": question.difficulty_score,
+        })
+    return responses
+
+
+# Frontend-only demo class data. These fixed patterns deliberately include varied
+# performance and two incomplete sessions; they are not production or live records.
+_DEMO_SESSION_PATTERNS = (
+    ("demo-01", "Amina Hassan", True, (0, 1, 2, 2, 2)),
+    ("demo-02", "Omar Khalil", True, (0, 0, 2, 1, 2)),
+    ("demo-03", "Layla Nasser", True, (1, 0, 2, 1, 0)),
+    ("demo-04", "Youssef Adel", True, (0, 1, 0, 1, 3)),
+    ("demo-05", "Nour Samir", True, (0, 1, 2, 2, 0)),
+    ("demo-06", "Mariam Tarek", True, (2, 0, 1, 1, 2)),
+    ("demo-07", "Karim Fawzy", True, (0, 1, 2, 0, 2)),
+    ("demo-08", "Salma Emad", True, (3, 3, 2, 1, 1)),
+    ("demo-09", "Ziad Mostafa", False, (0, 0)),
+    ("demo-10", "Farah Hany", False, (1, 1, 2)),
+)
+
+DEMO_CLASS_SESSIONS = [
+    {
+        "student_id": student_id,
+        "student_name": student_name,
+        "completed": completed,
+        "responses": _demo_responses(selected_options),
+    }
+    for student_id, student_name, completed, selected_options in _DEMO_SESSION_PATTERNS
+]

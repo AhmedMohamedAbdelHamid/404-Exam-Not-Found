@@ -59,17 +59,38 @@ the measurements behind this):
   narrows to ~4-6 chunks, semantic re-ranking on top of that adds risk
   without proven benefit for Arabic today. Can revisit if a stronger
   multilingual model is swapped in later.
+- BOTH languages: within the topic-filtered candidates, chunks are
+  additionally sorted by a `noise_score` (count of isolated A/B/C/D
+  answer-choice markers -- a concrete symptom of the Arabic fill-in-
+  the-blank exercise pages flagged in chunker.py's CHECKS_NEEDED).
+  Cleaner chunks (score 0, typically the "Information Study" concept
+  page) are preferred over noisier exercise pages when both exist for
+  a topic. This is exposed on the returned dict as `noise_score` too,
+  so B can filter/inspect it directly rather than trust it blindly.
 
 Run standalone for a demo: python3 retrieval.py
 """
 
 import json
+import re
 import random
 import chromadb
 
 CHROMA_PATH = "./chroma_db"
 
 _client = chromadb.PersistentClient(path=CHROMA_PATH)
+
+# Detects isolated A/B/C/D answer-choice markers sitting alone on their
+# own line -- a concrete, checkable symptom of the Arabic fill-in-the-
+# blank exercise page noise flagged in chunker.py's CHECKS_NEEDED (#2).
+# Measured on real chunks_ar.json: clean "Information Study" concept
+# pages score 0; noisy exercise pages score 7-9. Not a claim about
+# quality in general -- just this one specific, verified artifact.
+_ISOLATED_LETTER_RE = re.compile(r"(?m)^[A-D]\s*$")
+
+
+def _noise_score(text: str) -> int:
+    return len(_ISOLATED_LETTER_RE.findall(text))
 
 
 def _collection_name(language: str) -> str:
@@ -113,9 +134,9 @@ def get_chunks(
 
     Returns:
         List of dicts: {chunk_id, topic, language, chunk_type, text,
-        source_pages}. Empty list if topic/language has no chunks
-        (call site should treat this as "fall back to backup pool",
-        not crash).
+        source_pages, noise_score}. Empty list if topic/language has
+        no chunks (call site should treat this as "fall back to
+        backup pool", not crash).
     """
     del difficulty  # intentionally unused -- see docstring
 
@@ -143,10 +164,16 @@ def get_chunks(
             "chunk_type": meta["chunk_type"],
             "text": doc,
             "source_pages": json.loads(meta["source_pages"]),
+            "noise_score": _noise_score(doc),
         })
 
     if not candidates:
         return []
+
+    # Prefer cleaner chunks when there's a choice -- stable sort so this
+    # doesn't fight the language-specific ranking/shuffle below, it just
+    # biases which candidates are "in the running" for the top n.
+    candidates.sort(key=lambda c: c["noise_score"])
 
     if language == "en" and len(candidates) > n:
         # EN only: re-rank the topic-filtered candidates by embedding
@@ -169,9 +196,15 @@ def get_chunks(
         return (ranked + remaining)[:n]
 
     # AR (and EN fallback): topic filter is already reliable on its
-    # own; just sample without an unproven semantic re-rank.
-    random.shuffle(candidates)
-    return candidates[:n]
+    # own; no unproven semantic re-rank. Still respect the noise sort
+    # above -- shuffle only among the cleanest tier (noise_score equal
+    # to the minimum present) so we don't randomly hand back a noisy
+    # exercise-page chunk when a clean one was available for this topic.
+    min_noise = candidates[0]["noise_score"]
+    clean_tier = [c for c in candidates if c["noise_score"] == min_noise]
+    random.shuffle(clean_tier)
+    remaining = [c for c in candidates if c["noise_score"] != min_noise]
+    return (clean_tier + remaining)[:n]
 
 
 if __name__ == "__main__":
@@ -189,4 +222,4 @@ if __name__ == "__main__":
             print("  -> [] (no chunks for this topic/language -- caller should use backup pool)")
         for c in chunks:
             preview = c["text"][:80].replace("\n", " ")
-            print(f"  {c['chunk_id']:25s} [{c['chunk_type']:10s}] {preview}...")
+            print(f"  {c['chunk_id']:25s} [{c['chunk_type']:10s}] noise={c['noise_score']}  {preview}...")

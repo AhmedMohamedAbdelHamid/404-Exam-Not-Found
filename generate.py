@@ -6,13 +6,12 @@ Ties together: prompt_template.build_messages() -> LLM call ->
 prompt_template.parse_and_validate() -> difficulty_scorer.apply_difficulty_score()
 -> a fully populated, schema-valid QuestionOut.
 
-No live LLM API is reachable from this sandbox (network is restricted
-to package registries), so `call_llm()` below is a stand-in that
-returns pre-written realistic responses keyed by chunk_id -- but its
-SIGNATURE is exactly what a real call will need: (messages) -> raw
-string. On Day 4-5 (B3), swapping this for a real Gemini/OpenAI call
-should mean changing the body of call_llm() only -- generate_question()
-and everything downstream should not need to change.
+call_llm() now uses the REAL Gemini API (llm_client.py) automatically
+when GEMINI_API_KEY is set (see llm_client.USE_REAL_LLM). Without a
+key -- e.g. this sandbox, which also has no network path to Google's
+API regardless -- it falls back to the same hand-written canned
+responses this file has used since Day 3, so local/offline testing
+still works unchanged.
 
 Run standalone: python3 generate.py
 """
@@ -28,11 +27,12 @@ from prompt_template import (
     _simulated_llm_response_for_variables_chunk,
     _simulated_llm_response_for_if_elif_chunk,
 )
+import llm_client
 
 # ---------------------------------------------------------------------
-# Stand-in LLM call. Real signature: (messages: list[dict]) -> str.
-# Swap the body for a real API call on Day 4-5 (B3) -- callers below
-# should not need to change.
+# LLM call. Real signature: (messages: list[dict]) -> str.
+# Uses llm_client.py's real Gemini call when GEMINI_API_KEY is set;
+# otherwise falls back to canned responses below (offline/no-key path).
 # ---------------------------------------------------------------------
 
 # All 4 SAMPLE_CHUNKS in prompt_template.py now have a canned response,
@@ -46,12 +46,15 @@ _CANNED_RESPONSES = {
 
 
 def call_llm(messages: list[dict], chunk_id: str) -> str:
-    """Stand-in for a real LLM call. `chunk_id` is not part of the real
-    call signature (a real call only needs `messages`) -- it's passed
-    here only so this stand-in knows which canned response to return.
-    Raises if no canned response exists for chunk_id, so a missing case
-    fails loudly instead of silently returning nothing.
+    """Real LLM call when GEMINI_API_KEY is set (llm_client.py);
+    otherwise falls back to a canned response keyed by chunk_id, so
+    this file's own dummy-chunk demo keeps working with no key/network
+    (as in this sandbox). `chunk_id` is only used by the fallback path
+    -- a real call only needs `messages`.
     """
+    if llm_client.USE_REAL_LLM:
+        return llm_client.generate_question_json(messages)
+
     del messages  # the canned response ignores prompt content entirely
     if chunk_id not in _CANNED_RESPONSES:
         raise NotImplementedError(

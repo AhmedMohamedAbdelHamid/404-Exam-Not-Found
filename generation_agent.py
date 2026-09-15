@@ -72,6 +72,62 @@ class NoChunkAvailable(Exception):
         )
 
 
+_HEADER_NOISE = {
+    "دراسة المعلومات",   # "Information Study" (AR section header)
+    "النقاط الرئيسية",    # "Key Points" (AR section header)
+    "Information Study",
+    "Point!",
+}
+
+
+def _is_header_noise(line: str) -> bool:
+    """True for known boilerplate section-header lines and bare page
+    numbers -- these are real lines in the chunk text (see chunker.py's
+    page-level extraction) but not content, and picking one as the
+    "grounding phrase" would produce a technically-grounded-but-
+    meaningless question (e.g. quoting "Key Points" back verbatim)."""
+    if line in _HEADER_NOISE:
+        return True
+    if line.strip().isdigit():  # bare page number
+        return True
+    return False
+
+
+def _pick_grounding_phrase(chunk_text: str, min_len: int = 30, max_len: int = 90) -> str:
+    """Pull one real, verbatim line/sentence-ish fragment out of the
+    chunk text to quote back in the stub question -- this is what
+    actually gives validation_stage1.py's keyword-overlap check
+    something genuine to match against (see _generic_stub_llm_response's
+    docstring for why the old topic-label-only version failed this).
+    Works for both EN and AR since it operates on raw lines/whitespace,
+    not language-specific tokenization.
+
+    Filters out known boilerplate (page numbers, "Information Study" /
+    "Key Points" section headers -- see _is_header_noise) rather than
+    just skipping a fixed number of lines, since header position isn't
+    consistent across chunks (confirmed: on some pages the header is
+    lines 0-2, on others content starts immediately).
+
+    Picks the first non-header line in [min_len, max_len] chars so the
+    fragment is long enough to carry several real keywords but short
+    enough to embed cleanly in a question sentence. Falls back to a
+    hard truncation of the first substantial non-header line if nothing
+    in that window exists.
+    """
+    lines = [l.strip() for l in chunk_text.split("\n") if l.strip()]
+    candidate_lines = [l for l in lines if not _is_header_noise(l)]
+
+    for line in candidate_lines:
+        if min_len <= len(line) <= max_len:
+            return line
+    for line in candidate_lines:
+        if len(line) > max_len:
+            return line[:max_len].rsplit(" ", 1)[0]
+    # last resort: whatever's there, even if short (shouldn't happen
+    # given real chunk sizes, but don't crash on a pathological input)
+    return candidate_lines[0] if candidate_lines else chunk_text[:max_len]
+
+
 def _generic_stub_llm_response(chunk: dict, target_difficulty: int) -> str:
     """GENERIC test stub, NOT a real LLM call and NOT pedagogically
     designed like generate.py's hand-written canned responses. Produces
@@ -80,28 +136,57 @@ def _generic_stub_llm_response(chunk: dict, target_difficulty: int) -> str:
     -> validate -> score) can be tested against arbitrary real chunks,
     not just the 4 hand-picked ones in prompt_template.py.
 
-    Replace with a real LLM call before Day 5-6 / the demo -- see
-    module docstring.
+    FIX (2026-09-15, flagged by A's verify_integration.py + a real
+    GenerationUnavailable failure on every AR topic except one, 0/5 to
+    5/5 across two independent runs -- see verification_report_*.txt):
+    the PREVIOUS version of this stub asked "what is this passage
+    about?" and answered with the chunk's `topic` LABEL (e.g. "loops
+    and conditionals" or, worse, the raw English label even for AR
+    questions). That fails validation_stage1.py's keyword-overlap check
+    on two independent grounds:
+      1. For AR: the English topic string doesn't appear anywhere in
+         Arabic chunk text at all (a straightforward language bug).
+      2. For BOTH languages: a topic LABEL like "loops and conditionals"
+         is a category name, not vocabulary that appears verbatim in a
+         page actually explaining `for i in range(...)`. So even the EN
+         path was only passing by luck/generic-word overlap, not real
+         grounding -- this was riding on generate.py's hand-written
+         SAMPLE_CHUNKS responses (which reference real code) for its
+         apparent EN success, not proving genuine grounding itself.
+
+    NEW approach: quote a real, verbatim fragment pulled directly from
+    the chunk's own text (see _pick_grounding_phrase) inside the
+    question, and reference it in the correct option too. This gives
+    Stage 1 real, checkable overlap for ANY chunk in ANY language,
+    without needing per-language translation logic here -- the stub
+    doesn't "know" Arabic or English, it just quotes the source.
+
+    Still NOT pedagogically designed (doesn't test a misconception,
+    doesn't require applying the concept) -- replace with a real LLM
+    call before the actual demo, same as before. This fix only makes
+    the STUB's plumbing-test honest, it does not replace real
+    generation quality.
     """
     topic = chunk["topic"]
     language = chunk["language"]
-    lang_label = {"en": "English", "ar": "Arabic"}.get(language, language)
+    chunk_text = chunk["text"]
+    phrase = _pick_grounding_phrase(chunk_text)
 
     if language == "ar":
-        question_text = f"بناءً على النص، ما الموضوع الرئيسي لهذا المقطع؟ ({topic})"
+        question_text = f"أي من العبارات التالية وردت في النص المصدر؟"
         options = [
-            {"text": f"يتعلق بموضوع {topic}", "correct": True, "misconception": None},
-            {"text": "يتعلق بموضوع غير ذي صلة (أ)", "correct": False, "misconception": "خلط بين مواضيع مختلفة من الكتاب"},
-            {"text": "يتعلق بموضوع غير ذي صلة (ب)", "correct": False, "misconception": "افتراض أن كل صفحة تغطي نفس الموضوع"},
-            {"text": "لا يمكن تحديد الموضوع من النص", "correct": False, "misconception": "تجاهل المحتوى الصريح للنص"},
+            {"text": phrase, "correct": True, "misconception": None},
+            {"text": "عبارة غير موجودة في النص (أ)", "correct": False, "misconception": "خلط بين مواضيع مختلفة من الكتاب"},
+            {"text": "عبارة غير موجودة في النص (ب)", "correct": False, "misconception": "افتراض أن كل صفحة تغطي نفس الموضوع"},
+            {"text": "لا يمكن تحديد ذلك من النص", "correct": False, "misconception": "تجاهل المحتوى الصريح للنص"},
         ]
     else:
-        question_text = f"Based on the text, what is this passage primarily about? ({topic})"
+        question_text = "Which of the following appears in the source text?"
         options = [
-            {"text": f"It explains {topic}", "correct": True, "misconception": None},
-            {"text": "It explains an unrelated topic (A)", "correct": False, "misconception": "confuses this topic with a different chapter section"},
-            {"text": "It explains an unrelated topic (B)", "correct": False, "misconception": "assumes all pages in the chapter cover the same topic"},
-            {"text": "The topic cannot be determined from the text", "correct": False, "misconception": "ignores the passage's explicit content"},
+            {"text": phrase, "correct": True, "misconception": None},
+            {"text": "A sentence that does not appear in the text (A)", "correct": False, "misconception": "confuses this topic with a different chapter section"},
+            {"text": "A sentence that does not appear in the text (B)", "correct": False, "misconception": "assumes all pages in the chapter cover the same topic"},
+            {"text": "This cannot be determined from the text", "correct": False, "misconception": "ignores the passage's explicit content"},
         ]
 
     return json.dumps({
@@ -117,9 +202,10 @@ def _generic_stub_llm_response(chunk: dict, target_difficulty: int) -> str:
             "distractor_quality": 2,
             "distractor_justification": "[STUB] generic topic-confusion distractors, not chunk-specific",
             "concept_depth": 1,
-            "concept_depth_justification": "[STUB] single-chunk topic identification only",
+            "concept_depth_justification": "[STUB] verbatim-recall only, not a real pedagogical question",
         },
     })
+
 
 
 def call_llm(messages: list[dict], chunk: dict, target_difficulty: int) -> str:

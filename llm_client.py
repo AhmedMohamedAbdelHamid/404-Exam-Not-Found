@@ -2,12 +2,16 @@
 llm_client.py — real LLM integration (replaces the call_llm stand-ins
 in generate.py / generation_agent.py / validation_stage2.py).
 
-Uses Gemini 2.5 Flash by default: cheapest current Gemini model with
-reliable JSON-schema-constrained structured output, which is all this
-task needs (grounded MCQ generation isn't a reasoning-heavy task that
-benefits from a pricier model). Override with the GEMINI_MODEL env var
-if the team wants a newer/stronger Flash variant later -- no code
-change needed, just the env var.
+Uses Gemini 3.6 Flash by default: reliable JSON-schema-constrained
+structured output, which is all this task needs (grounded MCQ
+generation isn't a reasoning-heavy task that benefits from a pricier
+model). Note: gemini-2.5-flash was the original pick here but Google
+retired it for new API keys (confirmed by a live 404 error naming
+gemini-3.6-flash as the replacement) -- if this breaks again later,
+check which Flash model is currently live and update GEMINI_MODEL
+below or via the env var, same fix either way.
+Override with the GEMINI_MODEL env var if the team wants a different
+Flash variant -- no code change needed, just the env var.
 
 --------------------------------------------------------------------
 Setup (run these yourself -- this sandbox has no network access to
@@ -49,6 +53,7 @@ substitute one.
 
 import os
 import json
+import time
 from pydantic import BaseModel
 
 from schema import QuestionOut
@@ -65,8 +70,21 @@ except ImportError:
     # automatically, but real shell-exported env vars still work fine.
     pass
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 USE_REAL_LLM = bool(os.environ.get("GEMINI_API_KEY"))
+
+# Retries for TRANSIENT server-side failures (503 overloaded, 429 rate
+# limit, network blips) -- distinct from validation_stage2.py's retry
+# loop, which retries GENERATION QUALITY failures (bad question, wrong
+# answer). This layer exists because a live run hit exactly this case:
+# call 1 succeeded, call 2 hit a transient 503 from Google's servers
+# and killed the whole script, even though nothing was wrong with the
+# request itself. Retrying here means one flaky 503 doesn't fail an
+# otherwise-working pipeline.
+MAX_TRANSIENT_RETRIES = 3
+TRANSIENT_RETRY_BASE_DELAY_SECONDS = 2  # doubles each retry: 2s, 4s, 8s
+
+_TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
 
 _client = None
 
@@ -124,6 +142,18 @@ def _messages_to_gemini(messages: list[dict]) -> tuple[str | None, str]:
     return system_instruction, contents
 
 
+def _is_transient_error(e: Exception) -> bool:
+    """True for errors worth retrying (server overload, rate limit,
+    network blips) -- False for errors that will never succeed on
+    retry (bad API key, invalid request, model not found). Checks
+    `.code`, the numeric HTTP-style status the google-genai SDK
+    attaches to its APIError/ClientError/ServerError exceptions
+    (confirmed against the installed SDK's actual error class, not
+    guessed).
+    """
+    return getattr(e, "code", None) in _TRANSIENT_STATUS_CODES
+
+
 def _call_gemini(messages: list[dict], response_schema) -> str:
     if not USE_REAL_LLM:
         raise LLMCallError(
@@ -145,17 +175,37 @@ def _call_gemini(messages: list[dict], response_schema) -> str:
         response_schema=response_schema,
     )
 
-    try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=contents,
-            config=config,
-        )
-    except Exception as e:
+    last_error = None
+    for attempt in range(MAX_TRANSIENT_RETRIES + 1):  # 1 initial + retries
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=contents,
+                config=config,
+            )
+            break
+        except Exception as e:
+            last_error = e
+            if _is_transient_error(e) and attempt < MAX_TRANSIENT_RETRIES:
+                delay = TRANSIENT_RETRY_BASE_DELAY_SECONDS * (2 ** attempt)
+                print(
+                    f"  [llm_client] Transient error on attempt {attempt + 1}/"
+                    f"{MAX_TRANSIENT_RETRIES + 1} ({e}). Retrying in {delay}s..."
+                )
+                time.sleep(delay)
+                continue
+            raise LLMCallError(
+                f"Gemini API call failed (model={GEMINI_MODEL!r}) after "
+                f"{attempt + 1} attempt(s). Check your API key, quota, and "
+                f"network connection. Original error: {e}"
+            ) from e
+    else:
+        # Loop exhausted without a `break` -- exhausted all retries.
         raise LLMCallError(
-            f"Gemini API call failed (model={GEMINI_MODEL!r}). Check your "
-            f"API key, quota, and network connection. Original error: {e}"
-        ) from e
+            f"Gemini API call failed (model={GEMINI_MODEL!r}) after "
+            f"{MAX_TRANSIENT_RETRIES + 1} attempts, all transient errors. "
+            f"Original error: {last_error}"
+        ) from last_error
 
     if not response.text:
         raise LLMCallError(

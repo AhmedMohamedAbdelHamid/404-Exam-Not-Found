@@ -1,0 +1,52 @@
+======================================================================
+A's INTEGRATION VERIFICATION REPORT — 2026-09-15 14:30:32
+Real ChunkSampler + real ChromaDB wired into B's full pipeline
+(staircase -> retrieval/chunk_sampler -> generation_agent ->
+ validation_stage2 -> get_next_question), not B's mock.
+======================================================================
+
+--- ENGLISH: 3 full exams, different students ---
+
+Student verify_en_0:
+  Q1: topic='algorithm'                  chunk=en_ch12_12-1_p154      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=en_ch12_12-2_p158      difficulty_score=2  -> correct
+  Q3: topic='loops and conditionals'     chunk=en_ch12_12-3_p163      difficulty_score=3  -> wrong
+  Q4: topic='lists'                      chunk=en_ch12_12-4_p167      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=en_ch12_12-5_p171      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+Student verify_en_1:
+  Q1: topic='algorithm'                  chunk=en_ch12_12-1_p154      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=en_ch12_12-2_p159      difficulty_score=2  -> correct
+  Q3: topic='loops and conditionals'     chunk=en_ch12_12-3_p162      difficulty_score=3  -> wrong
+  Q4: topic='lists'                      chunk=en_ch12_12-4_p167      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=en_ch12_12-5_p171      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+Student verify_en_2:
+  Q1: topic='algorithm'                  chunk=en_ch12_12-1_p154      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=en_ch12_12-2_p159      difficulty_score=2  -> correct
+  Q3: topic='loops and conditionals'     chunk=en_ch12_12-3_p162      difficulty_score=3  -> wrong
+  Q4: topic='lists'                      chunk=en_ch12_12-4_p167      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=en_ch12_12-5_p171      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+--- ARABIC: 1 full exam ---
+
+Student verify_ar_0:
+  Q1: topic='algorithm'                  chunk=ar_ch12_12-1_p168      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=ar_ch12_12-2_p174      difficulty_score=2  -> wrong
+  Q3: topic='loops and conditionals'     chunk=ar_ch12_12-3_p176      difficulty_score=2  -> correct
+  Q4: topic='lists'                      chunk=ar_ch12_12-4_p181      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=ar_ch12_12-5_p185      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+======================================================================
+SUMMARY
+======================================================================
+  EN verify_en_0: 5/5 questions generated  [✓ PASS]
+  EN verify_en_1: 5/5 questions generated  [✓ PASS]
+  EN verify_en_2: 5/5 questions generated  [✓ PASS]
+  AR verify_ar_0: 5/5 questions generated  [✓ PASS]
+
+✓ ALL TRACKS PASSED — real retrieval fully verified end-to-end.

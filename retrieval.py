@@ -60,13 +60,18 @@ the measurements behind this):
   without proven benefit for Arabic today. Can revisit if a stronger
   multilingual model is swapped in later.
 - BOTH languages: within the topic-filtered candidates, chunks are
-  additionally sorted by a `noise_score` (count of isolated A/B/C/D
-  answer-choice markers -- a concrete symptom of the Arabic fill-in-
-  the-blank exercise pages flagged in chunker.py's CHECKS_NEEDED).
-  Cleaner chunks (score 0, typically the "Information Study" concept
-  page) are preferred over noisier exercise pages when both exist for
-  a topic. This is exposed on the returned dict as `noise_score` too,
+  additionally sorted by `exercise_density_score` (count of isolated
+  A/B/C/D fill-in-the-blank markers -- confirmed by direct inspection
+  to indicate dense multi-problem exercise pages, NOT extraction
+  corruption; both genres extract faithfully). Lower-density chunks
+  (score 0, typically the "Information Study" concept/example page)
+  are preferred over dense exercise pages when both exist for a topic,
+  since a focused page makes a better single-question grounding source.
+  This is exposed on the returned dict as `exercise_density_score` too,
   so B can filter/inspect it directly rather than trust it blindly.
+  See retrieval.py's inline comment above _exercise_density_score for
+  the full investigation (this was originally called "noise_score";
+  renamed after confirming it does not measure a defect).
 
 Run standalone for a demo: python3 retrieval.py
 """
@@ -80,16 +85,42 @@ CHROMA_PATH = "./chroma_db"
 
 _client = chromadb.PersistentClient(path=CHROMA_PATH)
 
-# Detects isolated A/B/C/D answer-choice markers sitting alone on their
-# own line -- a concrete, checkable symptom of the Arabic fill-in-the-
-# blank exercise page noise flagged in chunker.py's CHECKS_NEEDED (#2).
-# Measured on real chunks_ar.json: clean "Information Study" concept
-# pages score 0; noisy exercise pages score 7-9. Not a claim about
-# quality in general -- just this one specific, verified artifact.
+# --------------------------------------------------------------------
+# exercise_density_score -- renamed from an earlier "noise_score"
+# (2026-09-15 accuracy review, see roadmap discussion). Investigated
+# whether this was extraction corruption to FIX, not just deprioritize
+# -- it isn't. Manually inspected the highest-scoring chunks (13-17,
+# the worst in the corpus) directly against source text: code blocks
+# reconstruct cleanly (e.g. "a = [1, 4, 9, 16, 25]", "def area(base,
+# height):"), and the isolated A/B/C/D lines are the textbook's OWN
+# fill-in-the-blank answer markers (multi-part "Try It Yourself"
+# exercises with an answer key on the same page), not extraction
+# artifacts. So this metric does NOT measure extraction quality --
+# it measures exercise density, a real content-genre difference, not
+# a defect. Renamed to stop implying "noise = broken" when it means
+# "this page is a dense multi-problem exercise with a shared preamble
+# and answer key, which makes a poor single grounding chunk for one
+# generated question, even though the text itself is faithfully
+# extracted."
+#
+# Considered and rejected: splitting these pages into one sub-chunk
+# per fill-in-the-blank problem (the numbered "(1)/(2)/(3)" markers
+# ARE a real boundary). Rejected because the marker's exact formatting
+# isn't consistent enough across pages (spacing/character variants
+# confirmed on inspection) to split reliably without risking silently
+# cutting a problem's shared preamble or answer key away from its
+# blanks -- worse than today's state, where the whole page is at least
+# intact and honestly deprioritized. Revisit only with real time
+# budget for testing, not as a rushed fix.
 _ISOLATED_LETTER_RE = re.compile(r"(?m)^[A-D]\s*$")
 
 
-def _noise_score(text: str) -> int:
+def _exercise_density_score(text: str) -> int:
+    """Counts isolated A/B/C/D fill-in-the-blank markers -- a proxy for
+    'this chunk is a dense multi-problem exercise page' rather than a
+    single focused explanation/example. Higher = more sub-problems
+    crammed into one chunk, not lower quality. See module-level note
+    above for what this does and doesn't mean."""
     return len(_ISOLATED_LETTER_RE.findall(text))
 
 
@@ -134,7 +165,7 @@ def get_chunks(
 
     Returns:
         List of dicts: {chunk_id, topic, language, chunk_type, text,
-        source_pages, noise_score}. Empty list if topic/language has
+        source_pages, exercise_density_score}. Empty list if topic/language has
         no chunks (call site should treat this as "fall back to
         backup pool", not crash).
     """
@@ -164,16 +195,21 @@ def get_chunks(
             "chunk_type": meta["chunk_type"],
             "text": doc,
             "source_pages": json.loads(meta["source_pages"]),
-            "noise_score": _noise_score(doc),
+            "exercise_density_score": _exercise_density_score(doc),
         })
 
     if not candidates:
         return []
 
-    # Prefer cleaner chunks when there's a choice -- stable sort so this
-    # doesn't fight the language-specific ranking/shuffle below, it just
-    # biases which candidates are "in the running" for the top n.
-    candidates.sort(key=lambda c: c["noise_score"])
+    # Prefer lower exercise-density chunks when there's a choice --
+    # a focused explanation/example page makes a better single-question
+    # grounding source than a dense multi-problem exercise page (see
+    # _exercise_density_score's docstring -- this is NOT a quality/
+    # corruption signal, both kinds of page extract faithfully).
+    # Stable sort so this doesn't fight the language-specific
+    # ranking/shuffle below, it just biases which candidates are "in
+    # the running" for the top n.
+    candidates.sort(key=lambda c: c["exercise_density_score"])
 
     if language == "en" and len(candidates) > n:
         # EN only: re-rank the topic-filtered candidates by embedding
@@ -196,15 +232,16 @@ def get_chunks(
         return (ranked + remaining)[:n]
 
     # AR (and EN fallback): topic filter is already reliable on its
-    # own; no unproven semantic re-rank. Still respect the noise sort
-    # above -- shuffle only among the cleanest tier (noise_score equal
-    # to the minimum present) so we don't randomly hand back a noisy
-    # exercise-page chunk when a clean one was available for this topic.
-    min_noise = candidates[0]["noise_score"]
-    clean_tier = [c for c in candidates if c["noise_score"] == min_noise]
-    random.shuffle(clean_tier)
-    remaining = [c for c in candidates if c["noise_score"] != min_noise]
-    return (clean_tier + remaining)[:n]
+    # own; no unproven semantic re-rank. Still respect the density sort
+    # above -- shuffle only among the lowest-density tier (score equal
+    # to the minimum present) so we don't randomly hand back a dense
+    # multi-problem exercise chunk when a focused one was available for
+    # this topic.
+    min_density = candidates[0]["exercise_density_score"]
+    low_density_tier = [c for c in candidates if c["exercise_density_score"] == min_density]
+    random.shuffle(low_density_tier)
+    remaining = [c for c in candidates if c["exercise_density_score"] != min_density]
+    return (low_density_tier + remaining)[:n]
 
 
 if __name__ == "__main__":
@@ -222,4 +259,4 @@ if __name__ == "__main__":
             print("  -> [] (no chunks for this topic/language -- caller should use backup pool)")
         for c in chunks:
             preview = c["text"][:80].replace("\n", " ")
-            print(f"  {c['chunk_id']:25s} [{c['chunk_type']:10s}] noise={c['noise_score']}  {preview}...")
+            print(f"  {c['chunk_id']:25s} [{c['chunk_type']:10s}] exercise_density={c['exercise_density_score']}  {preview}...")

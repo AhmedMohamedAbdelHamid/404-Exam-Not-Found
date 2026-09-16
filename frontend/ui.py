@@ -10,21 +10,24 @@ def apply_styles():
     st.markdown(STYLES, unsafe_allow_html=True)
 
 
-def heading(title, subtitle, label):
-    st.markdown(f'<div class="page-heading"><div><h2>{escape(title)}</h2>'
+def heading(title, subtitle, label, direction="ltr"):
+    direction = "rtl" if direction == "rtl" else "ltr"
+    st.markdown(f'<div class="page-heading" dir="{direction}"><div><h2>{escape(title)}</h2>'
                 f'<p>{escape(subtitle)}</p></div><span class="sample-pill">{escape(label)}</span></div>',
                 unsafe_allow_html=True)
 
 
-def metrics(items):
-    st.markdown('<div class="metric-grid">' + "".join(
+def metrics(items, direction="ltr"):
+    direction = "rtl" if direction == "rtl" else "ltr"
+    st.markdown(f'<div class="metric-grid" dir="{direction}">' + "".join(
         f'<div class="metric-card"><div class="metric-label">{escape(label)}</div>'
         f'<strong>{escape(value)}</strong><small>{escape(note)}</small></div>'
         for label, value, note in items) + '</div>', unsafe_allow_html=True)
 
 
-def panel(title, subtitle, content):
-    st.markdown(f'<section class="panel"><h3>{escape(title)}</h3><p class="panel-subtitle">'
+def panel(title, subtitle, content, direction="ltr"):
+    direction = "rtl" if direction == "rtl" else "ltr"
+    st.markdown(f'<section class="panel" dir="{direction}"><h3>{escape(title)}</h3><p class="panel-subtitle">'
                 f'{escape(subtitle)}</p>{content}</section>', unsafe_allow_html=True)
 
 
@@ -182,6 +185,19 @@ h1,h2,h3 { color:var(--text); letter-spacing:-.035em; }
 .start-meta { display:flex; gap:.55rem; margin:.8rem 0; }
 .start-meta span { border:1px solid var(--border); background:#17171C; border-radius:6px; padding:.4rem .65rem;
     color:#D4D4D8; font-size:.66rem; }
+.runtime-status { display:flex; align-items:center; gap:.75rem; margin:.65rem 0 .2rem; padding:.8rem .9rem;
+    border:1px solid var(--border); border-radius:9px; background:#111115; }
+.runtime-status > span { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:#22C55E;
+    box-shadow:0 0 0 5px rgba(34,197,94,.08); }
+.runtime-status.fallback > span { background:#F59E0B; box-shadow:0 0 0 5px rgba(245,158,11,.08); }
+.runtime-status div { display:flex; flex-direction:column; gap:.12rem; }
+.runtime-status strong { color:var(--text); font-size:.75rem; }
+.runtime-status small { color:var(--muted); font-size:.68rem; line-height:1.45; }
+.operational-card { display:flex; flex-direction:column; gap:.35rem; padding:1.2rem 1.25rem; margin:.7rem 0 1rem;
+    border:1px solid rgba(255,48,64,.2); border-radius:12px; background:rgba(139,16,26,.09); }
+.operational-card.compact { padding:.75rem .9rem; margin:.75rem 0 .15rem; border-radius:8px; }
+.operational-card strong { color:#FDA4AF; font-size:.78rem; }
+.operational-card span,.operational-card small { color:#D4D4D8; font-size:.72rem; line-height:1.5; }
 .completion-score { margin:.8rem 0 .2rem; }
 .completion-score strong { color:#FF4655; font-size:3.4rem; letter-spacing:-.07em; }
 .completion-score span { color:var(--muted); font-size:1.5rem; }
@@ -189,8 +205,18 @@ h1,h2,h3 { color:var(--text); letter-spacing:-.035em; }
 .badges span,.tag { border:1px solid var(--border); background:#17171C; color:#C5C5CC; border-radius:5px;
     padding:.3rem .55rem; font-size:.59rem; font-weight:600; letter-spacing:.06em; }
 .badges span:first-child { color:#FF8791; border-color:rgba(255,48,64,.2); background:rgba(139,16,26,.12); }
+.badges .fallback-pill { color:#FCD34D; border-color:rgba(245,158,11,.25); background:rgba(245,158,11,.07); }
 .question-text { font-size:clamp(1.15rem,1.9vw,1.6rem); line-height:1.45; padding:1.1rem 0 .5rem; max-width:800px; }
+.question-text[dir="rtl"] { max-width:none; text-align:right; font-family:Tahoma,"Segoe UI",sans-serif; line-height:1.75; }
+.mixed-content { white-space:pre-wrap; unicode-bidi:plaintext; }
+.mixed-content .ltr-fragment,.answer-feedback .ltr-fragment,.review-cell .ltr-fragment {
+    direction:ltr; unicode-bidi:isolate; display:inline; }
+.mixed-content .code-fragment,.answer-feedback .code-fragment,.review-cell .code-fragment,
+.insight-row .code-fragment {
+    direction:ltr; unicode-bidi:isolate; display:inline; font-family:"Cascadia Code",Consolas,monospace;
+    font-size:.92em; letter-spacing:0; background:rgba(255,255,255,.045); border-radius:4px; padding:.08em .22em; }
 .question-hint { margin:0; color:var(--muted); font-size:.78rem; }
+.question-hint[dir="rtl"] { text-align:right; font-family:Tahoma,"Segoe UI",sans-serif; }
 [data-testid="stMain"] [data-testid="stElementContainer"]:has(> [data-testid="stRadio"]),
 [data-testid="stMain"] [data-testid="stRadio"],
 [data-testid="stMain"] [data-testid="stRadioGroup"] { width:100%; }
@@ -217,6 +243,9 @@ h1,h2,h3 { color:var(--text); letter-spacing:-.035em; }
 .answer-feedback.correct { color:#86EFAC; background:rgba(34,197,94,.09); border:1px solid rgba(34,197,94,.24); font-weight:700; }
 .answer-feedback.incorrect { color:#FDA4AF; background:rgba(255,48,64,.08); border:1px solid rgba(255,48,64,.22); }
 .answer-feedback span { color:#D4D4D8; min-width:0; overflow-wrap:anywhere; font-weight:500; }
+.answer-feedback small { display:block; color:#A1A1AA; margin-left:auto; font-size:.67rem; font-weight:500; }
+.answer-feedback[dir="rtl"] { text-align:right; font-family:Tahoma,"Segoe UI",sans-serif; }
+.answer-feedback[dir="rtl"] small { margin-left:0; margin-right:auto; }
 button:focus-visible,[data-testid="stMain"] label[data-testid="stRadioOption"]:has(input:focus-visible) {
     outline:2px solid #FF8791 !important; outline-offset:3px; }
 [data-testid="stExpander"] summary:focus-visible { outline:2px solid #FF8791; outline-offset:2px; border-radius:6px; }
@@ -298,6 +327,11 @@ div[class*="st-key-analytics_"] { background:#121216; border-color:var(--border)
 [data-testid="stExpander"] { background:#121216; border-color:var(--border) !important; border-radius:10px !important; }
 [data-testid="stExpander"] summary { font-size:.76rem; color:#E7E7EC; }
 .review-question { font-size:.78rem; color:#F1F1F3; line-height:1.55; margin:.15rem 0 .8rem; }
+.review-question[dir="rtl"],.review-grid[dir="rtl"],.panel[dir="rtl"],.page-heading[dir="rtl"],
+.metric-grid[dir="rtl"],.score-panel[dir="rtl"],.completion-panel[dir="rtl"] {
+    text-align:right; font-family:Tahoma,"Segoe UI",sans-serif; }
+.completion-panel[dir="rtl"] p { margin-left:auto; }
+.score-panel[dir="rtl"] > .sample-pill { margin-left:0; margin-right:auto; }
 .review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
 .review-cell { background:#17171C; border:1px solid var(--border); border-radius:8px; padding:.7rem .8rem; }
 .review-cell small { display:block; color:var(--muted); font-size:.57rem; letter-spacing:.07em;

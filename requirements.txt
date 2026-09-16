@@ -1,0 +1,22 @@
+# 404-Exam-Not-Found dependencies
+# No requirements.txt existed in the repo before -- built by scanning
+# actual imports across all three people's files (A: chunker.py,
+# embed_to_chroma.py, retrieval.py, chunk_sampler.py; B: schema.py and
+# everything downstream; C: app.py, frontend/*.py), Day 6.
+# Versions are NOT pinned (none were specified anywhere in the repo) --
+# pin these once the team has a working setup, so a future `pip install`
+# doesn't silently pull a breaking update mid-hackathon.
+
+# --- Person A: RAG pipeline ---
+pymupdf          # chunker.py -- PDF text extraction
+chromadb         # embed_to_chroma.py, retrieval.py -- vector store
+sentence-transformers  # embed_to_chroma.py -- multilingual embeddings (not directly imported but required by the embedding function A uses)
+
+# --- Person B: generation + difficulty logic ---
+pydantic         # schema.py -- structured output / validation
+google-genai     # llm_client.py -- real Gemini API calls
+python-dotenv    # llm_client.py -- loads GEMINI_API_KEY from .env
+
+# --- Person C: frontend + analytics ---
+streamlit        # app.py -- exam UI
+plotly           # frontend/analytics.py -- dashboard charts

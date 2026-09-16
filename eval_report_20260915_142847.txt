@@ -1,0 +1,59 @@
+======================================================================
+RETRIEVAL ACCURACY EVAL — 2026-09-15 14:28:47
+Does get_chunks(topic, language) surface content relevant to
+realistic questions about that topic? (30 labeled queries,
+3 per topic per language, grounding terms drawn from real chunk text)
+======================================================================
+
+--- EN ---
+  ✓ algorithm                    3/3  (4 chunks available)
+      ✓ 'What is an algorithm?'  (looked for: ['algorithm', 'method', 'procedure'])
+      ✓ 'How do flowcharts represent a process?'  (looked for: ['flowchart', 'diagram'])
+      ✓ 'What do the symbols in a flowchart mean?'  (looked for: ['symbol', 'terminal', 'process'])
+  ✓ variables and assignment     3/3  (4 chunks available)
+      ✓ 'How do you assign a value to a variable in Python?'  (looked for: ['=', 'variable'])
+      ✓ 'What does print() do?'  (looked for: ['print'])
+      ✓ 'How does a variable store data?'  (looked for: ['variable', 'store'])
+  ✓ loops and conditionals       3/3  (5 chunks available)
+      ✓ 'How does a for loop work in Python?'  (looked for: ['for', 'range'])
+      ✓ 'What does range() do in a for loop?'  (looked for: ['range'])
+      ✓ 'How do if/elif/else statements work?'  (looked for: ['if'])
+  ✓ lists                        3/3  (4 chunks available)
+      ✓ 'How do you access an element in a list by index?'  (looked for: ['[', 'index'])
+      ✓ 'How do you add an element to a list?'  (looked for: ['append', 'list'])
+      ✓ 'What is a two-dimensional list/array?'  (looked for: ['list', 'array'])
+  ✓ functions                    3/3  (3 chunks available)
+      ✓ 'How do you define a function in Python?'  (looked for: ['def', 'function'])
+      ✓ 'How does a function return a value?'  (looked for: ['return'])
+      ✓ 'How do you call a function with arguments?'  (looked for: ['function', '('])
+
+--- AR ---
+  ✓ algorithm                    3/3  (4 chunks available)
+      ✓ 'ما هي الخوارزمية؟'  (looked for: ['الخوارزمي'])
+      ✓ 'كيف تمثل المخططات الانسيابية عملية ما؟'  (looked for: ['مخطط'])
+      ✓ 'ما معنى الرموز في المخطط الانسيابي؟'  (looked for: ['رمز', 'مخطط'])
+  ✓ variables and assignment     3/3  (4 chunks available)
+      ✓ 'كيف يتم تعيين قيمة لمتغير في بايثون؟'  (looked for: ['متغير'])
+      ✓ 'ماذا تفعل print في بايثون؟'  (looked for: ['print'])
+      ✓ 'كيف يخزن المتغير البيانات؟'  (looked for: ['متغير'])
+  ✓ loops and conditionals       3/3  (6 chunks available)
+      ✓ 'كيف تعمل حلقة for في بايثون؟'  (looked for: ['for'])
+      ✓ 'ماذا تفعل range داخل حلقة for؟'  (looked for: ['range'])
+      ✓ 'كيف تعمل جمل if و elif و else؟'  (looked for: ['if'])
+  ✓ lists                        3/3  (4 chunks available)
+      ✓ 'كيف يتم الوصول إلى عنصر في القائمة عبر الفهرس؟'  (looked for: ['قائمة'])
+      ✓ 'كيف تضيف عنصرًا إلى القائمة؟'  (looked for: ['append', 'قائمة'])
+      ✓ 'ما هي القائمة ثنائية الأبعاد؟'  (looked for: ['قائمة'])
+  ✓ functions                    3/3  (4 chunks available)
+      ✓ 'كيف تعرّف دالة في بايثون؟'  (looked for: ['def', 'دالة'])
+      ✓ 'كيف تُرجع الدالة قيمة؟'  (looked for: ['return', 'دالة'])
+      ✓ 'كيف تستدعي دالة مع وسائط؟'  (looked for: ['دالة'])
+
+======================================================================
+SUMMARY
+======================================================================
+Overall: 30/30 queries had relevant content retrievable (100%)
+  EN: 15/15 (100%)
+  AR: 15/15 (100%)
+
+✓ Every labeled query found relevant content in its topic's chunks.

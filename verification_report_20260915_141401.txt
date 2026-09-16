@@ -1,0 +1,65 @@
+======================================================================
+A's INTEGRATION VERIFICATION REPORT — 2026-09-15 14:14:00
+Real ChunkSampler + real ChromaDB wired into B's full pipeline
+(staircase -> retrieval/chunk_sampler -> generation_agent ->
+ validation_stage2 -> get_next_question), not B's mock.
+======================================================================
+
+--- ENGLISH: 3 full exams, different students ---
+
+Student verify_en_0:
+  Q1: topic='algorithm'                  chunk=en_ch12_12-1_p154      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=en_ch12_12-2_p159      difficulty_score=2  -> correct
+  Q3: topic='loops and conditionals'     chunk=en_ch12_12-3_p163      difficulty_score=3  -> wrong
+  Q4: topic='lists'                      chunk=en_ch12_12-4_p167      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=en_ch12_12-5_p171      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+Student verify_en_1:
+  Q1: topic='algorithm'                  chunk=en_ch12_12-1_p154      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=en_ch12_12-2_p158      difficulty_score=2  -> correct
+  Q3: topic='loops and conditionals'     chunk=en_ch12_12-3_p162      difficulty_score=3  -> wrong
+  Q4: topic='lists'                      chunk=en_ch12_12-4_p167      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=en_ch12_12-5_p171      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+Student verify_en_2:
+  Q1: topic='algorithm'                  chunk=en_ch12_12-1_p154      difficulty_score=2  -> correct
+  Q2: topic='variables and assignment'   chunk=en_ch12_12-2_p158      difficulty_score=2  -> correct
+  Q3: topic='loops and conditionals'     chunk=en_ch12_12-3_p163      difficulty_score=3  -> wrong
+  Q4: topic='lists'                      chunk=en_ch12_12-4_p167      difficulty_score=2  -> correct
+  Q5: topic='functions'                  chunk=en_ch12_12-5_p171      difficulty_score=3  -> wrong
+  Exam complete after 5 questions.
+
+--- ARABIC: 1 full exam ---
+
+Student verify_ar_0:
+  Q1: FAILED -- GenerationUnavailable
+      Could not produce a question for student_id='verify_ar_0', topic='algorithm', language='ar', difficulty=3. Fall back to the backup question pool (A5) for this topic/difficulty. Underlying cause: Question generation for topic='algorithm' language='ar' failed validation after 3 attempts. Caller should fall back to the backup question pool (A5). Last failure reasons: ['attempt 3: Stage 1 failed', 'Exactly-one-correct-option check: passed (enforced by schema parse).', 'Distinct/non-empty options check: passed (enforced by schema parse).', "Keyword overlap check: FAILED -- Keyword overlap only 9% (1/11: ['على']) < 30% threshold, and no code identifiers matched. Question may not be grounded in the retrieved chunk (possible hallucination)."]
+  Q2: FAILED -- GenerationUnavailable
+      Could not produce a question for student_id='verify_ar_0', topic='variables and assignment', language='ar', difficulty=4. Fall back to the backup question pool (A5) for this topic/difficulty. Underlying cause: Question generation for topic='variables and assignment' language='ar' failed validation after 3 attempts. Caller should fall back to the backup question pool (A5). Last failure reasons: ['attempt 3: Stage 1 failed', 'Exactly-one-correct-option check: passed (enforced by schema parse).', 'Distinct/non-empty options check: passed (enforced by schema parse).', "Keyword overlap check: FAILED -- Keyword overlap only 7% (1/15: ['على']) < 30% threshold, and no code identifiers matched. Question may not be grounded in the retrieved chunk (possible hallucination)."]
+  Q3: FAILED -- GenerationUnavailable
+      Could not produce a question for student_id='verify_ar_0', topic='loops and conditionals', language='ar', difficulty=3. Fall back to the backup question pool (A5) for this topic/difficulty. Underlying cause: Question generation for topic='loops and conditionals' language='ar' failed validation after 3 attempts. Caller should fall back to the backup question pool (A5). Last failure reasons: ['attempt 3: Stage 1 failed', 'Exactly-one-correct-option check: passed (enforced by schema parse).', 'Distinct/non-empty options check: passed (enforced by schema parse).', 'Keyword overlap check: FAILED -- Keyword overlap only 0% (0/15: []) < 30% threshold, and no code identifiers matched. Question may not be grounded in the retrieved chunk (possible hallucination).']
+  Q4: FAILED -- GenerationUnavailable
+      Could not produce a question for student_id='verify_ar_0', topic='lists', language='ar', difficulty=4. Fall back to the backup question pool (A5) for this topic/difficulty. Underlying cause: Question generation for topic='lists' language='ar' failed validation after 3 attempts. Caller should fall back to the backup question pool (A5). Last failure reasons: ['attempt 3: Stage 1 failed', 'Exactly-one-correct-option check: passed (enforced by schema parse).', 'Distinct/non-empty options check: passed (enforced by schema parse).', "Keyword overlap check: FAILED -- Keyword overlap only 18% (2/11: ['على', 'الرئيسي']) < 30% threshold, and no code identifiers matched. Question may not be grounded in the retrieved chunk (possible hallucination)."]
+  Q5: FAILED -- GenerationUnavailable
+      Could not produce a question for student_id='verify_ar_0', topic='functions', language='ar', difficulty=5. Fall back to the backup question pool (A5) for this topic/difficulty. Underlying cause: Question generation for topic='functions' language='ar' failed validation after 3 attempts. Caller should fall back to the backup question pool (A5). Last failure reasons: ['attempt 3: Stage 1 failed', 'Exactly-one-correct-option check: passed (enforced by schema parse).', 'Distinct/non-empty options check: passed (enforced by schema parse).', "Keyword overlap check: FAILED -- Keyword overlap only 18% (2/11: ['على', 'الرئيسي']) < 30% threshold, and no code identifiers matched. Question may not be grounded in the retrieved chunk (possible hallucination)."]
+
+======================================================================
+SUMMARY
+======================================================================
+  EN verify_en_0: 5/5 questions generated  [✓ PASS]
+  EN verify_en_1: 5/5 questions generated  [✓ PASS]
+  EN verify_en_2: 5/5 questions generated  [✓ PASS]
+  AR verify_ar_0: 0/5 questions generated  [✗ FAIL]
+
+✗ AT LEAST ONE TRACK FAILED — see failures above for details.
+  Known issue as of this script's writing: the AR track fails
+  Stage 1 keyword-overlap validation because generation_agent.py's
+  fallback stub embeds the raw English topic string into Arabic
+  question text. This is a generation-stub bug, not a retrieval
+  bug -- confirmed by inspecting the raw chunk text (on-topic,
+  clean Arabic) vs the raw stub output (English word injected).
+  Fix belongs in generation_agent.py, or resolves automatically
+  once a real GEMINI_API_KEY is set (llm_client.py bypasses the
+  stub entirely).

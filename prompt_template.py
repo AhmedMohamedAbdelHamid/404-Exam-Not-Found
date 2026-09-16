@@ -204,10 +204,15 @@ difficulty band, following the system instructions exactly. The question and \
 options must be written in {language} (code/syntax stays untranslated)."""
 
 
-def build_messages(chunk_id: str, target_difficulty: int) -> list[dict]:
-    chunk = SAMPLE_CHUNKS[chunk_id]
+def build_messages_from_chunk(chunk: dict, target_difficulty: int) -> list[dict]:
+    """Primary entry point (B3): build the LLM prompt from any chunk
+    dict shaped like A's real get_chunks() / chunk_sampler.py output --
+    {chunk_id, topic, language, chunk_type, text, ...}. Works identically
+    whether the chunk came from SAMPLE_CHUNKS (dummy/demo) or real
+    retrieval -- nothing here is aware of which source it came from.
+    """
     user_prompt = USER_PROMPT_TEMPLATE.format(
-        chunk_id=chunk_id,
+        chunk_id=chunk["chunk_id"],
         topic=chunk["topic"],
         language=chunk["language"],
         chunk_type=chunk["chunk_type"],
@@ -218,6 +223,19 @@ def build_messages(chunk_id: str, target_difficulty: int) -> list[dict]:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
     ]
+
+
+def build_messages(chunk_id: str, target_difficulty: int) -> list[dict]:
+    """Day-2/3 convenience wrapper for the dummy-chunk demo path only --
+    looks `chunk_id` up in SAMPLE_CHUNKS and delegates to
+    build_messages_from_chunk(). Real retrieval (B3) should call
+    build_messages_from_chunk() directly with a chunk dict from
+    chunk_sampler.get_unseen_chunk(), since real chunk_ids are never in
+    SAMPLE_CHUNKS.
+    """
+    chunk = dict(SAMPLE_CHUNKS[chunk_id])
+    chunk["chunk_id"] = chunk_id
+    return build_messages_from_chunk(chunk, target_difficulty)
 
 
 # ---------------------------------------------------------------------

@@ -31,7 +31,7 @@ What this does NOT solve (be honest about scope):
 This prevents SAME-STUDENT chunk reuse (a student won't see the same
 chunk twice across their own exam). It does NOT, by itself, guarantee
 two DIFFERENT students get different chunks on the same topic -- with
-only 3 clean chunks per topic (see noise_score filtering in
+only 1-4 low-exercise-density chunks per topic (see exercise_density_score filtering in
 retrieval.py) and a class-sized cohort, students WILL end up sharing
 source chunks, especially once everyone's seen the same 3. If two
 students who happen to share a chunk also happen to get similar
@@ -86,7 +86,7 @@ class ChunkSampler:
         # Ask for a few candidates, not just one -- if the top pick
         # happens to already be seen, we can fall through to the next
         # without a second round-trip. get_chunks() already sorts by
-        # noise_score, so candidates arrive best-first.
+        # exercise_density_score, so candidates arrive best-first.
         candidates = get_chunks(
             topic, language, difficulty=difficulty, n=6,
             exclude_chunk_ids=list(already_seen),
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     for i in range(5):
         chunk = sampler.get_unseen_chunk("student_A", "loops and conditionals", "ar")
         if chunk:
-            print(f"  call {i+1}: {chunk['chunk_id']} (noise={chunk['noise_score']})")
+            print(f"  call {i+1}: {chunk['chunk_id']} (exercise_density={chunk['exercise_density_score']})")
         else:
             print(f"  call {i+1}: None -- all chunks for this topic exhausted for student_A")
 

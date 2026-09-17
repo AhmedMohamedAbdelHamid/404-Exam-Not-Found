@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from api.analytics_store import AnalyticsStore
 from api.assessment_service import AssessmentService
 from api.attempt_store import AttemptStore
 from api.main import create_app
@@ -130,7 +131,16 @@ class FakeRuntime:
 
 
 class Harness:
-    def __init__(self, tmp_path, *, configured=True, get_next_fn=None, record_fn=None, backup_fn=None):
+    def __init__(
+        self,
+        tmp_path,
+        *,
+        configured=True,
+        get_next_fn=None,
+        record_fn=None,
+        backup_fn=None,
+        analytics_store=None,
+    ):
         FakeStaircase.reset()
         self.record_calls = 0
         self.sampler = object()
@@ -155,6 +165,7 @@ class Harness:
             state["correct_count"] += int(correct)
             return dict(state)
 
+        self.analytics = analytics_store or AnalyticsStore(tmp_path / "analytics.db")
         self.service = AssessmentService(
             store=AttemptStore(),
             runtime_inspector=FakeRuntime(configured=configured),
@@ -165,6 +176,7 @@ class Harness:
             backup_fn=backup_fn or (lambda topic, language, difficulty: question(language, topic, difficulty)),
             staircase_db_path=str(tmp_path / "state.db"),
             randomizer=random.Random(7),
+            analytics_store=self.analytics,
         )
         self.client = TestClient(create_app(self.service), raise_server_exceptions=False)
 
@@ -188,6 +200,47 @@ class Harness:
         )
 
 
+class ControlledAnalyticsStore(AnalyticsStore):
+    """Inject one-shot persistence failures without changing production code."""
+
+    def __init__(self, db_path):
+        super().__init__(db_path)
+        self.fail_prepare_once = False
+        self.fail_confirm_once = False
+        self.fail_mark_failed_once = False
+        self.fail_create_once = False
+        self.prepare_calls = 0
+        self.confirm_calls = 0
+        self.mark_failed_calls = 0
+
+    def create_attempt(self, **kwargs):
+        if self.fail_create_once:
+            self.fail_create_once = False
+            raise sqlite3.OperationalError("injected analytics attempt failure")
+        return super().create_attempt(**kwargs)
+
+    def prepare_answer(self, **kwargs):
+        self.prepare_calls += 1
+        if self.fail_prepare_once:
+            self.fail_prepare_once = False
+            raise sqlite3.OperationalError("injected analytics prepare failure")
+        return super().prepare_answer(**kwargs)
+
+    def confirm_answer(self, *args, **kwargs):
+        self.confirm_calls += 1
+        if self.fail_confirm_once:
+            self.fail_confirm_once = False
+            raise sqlite3.OperationalError("injected analytics confirm failure")
+        return super().confirm_answer(*args, **kwargs)
+
+    def mark_answer_failed(self, *args, **kwargs):
+        self.mark_failed_calls += 1
+        if self.fail_mark_failed_once:
+            self.fail_mark_failed_once = False
+            raise sqlite3.OperationalError("injected analytics failure-state failure")
+        return super().mark_answer_failed(*args, **kwargs)
+
+
 @pytest.fixture
 def harness(tmp_path):
     return Harness(tmp_path)
@@ -198,6 +251,10 @@ def test_start_english_attempt_and_trim_identifier(harness):
     assert started["student_id"] == "qa_student"
     assert started["language"] == "en"
     assert started["current_adaptive_difficulty"] == 3
+    durable = harness.analytics.get_attempt(started["attempt_id"])
+    assert durable.student_id == "qa_student"
+    assert durable.language == "en"
+    assert durable.initial_difficulty == 3
 
 
 def test_start_arabic_explicitly_initializes_language(harness):
@@ -205,6 +262,7 @@ def test_start_arabic_explicitly_initializes_language(harness):
     attempt = harness.service.store.get(UUID(started["attempt_id"]))
     state = FakeStaircase.stores[attempt.staircase_db_path][attempt.backend_student_key]
     assert state["language"] == "ar"
+    assert harness.analytics.get_attempt(started["attempt_id"]).language == "ar"
 
 
 def test_blank_student_validation_is_safe(harness):
@@ -214,6 +272,20 @@ def test_blank_student_validation_is_safe(harness):
     assert "traceback" not in response.text.lower()
 
 
+def test_attempt_analytics_failure_is_controlled_and_not_registered(tmp_path):
+    analytics = ControlledAnalyticsStore(tmp_path / "analytics.db")
+    harness = Harness(tmp_path, analytics_store=analytics)
+    analytics.fail_create_once = True
+    response = harness.client.post(
+        "/api/attempts", json={"student_id": "qa_student", "language": "en"}
+    )
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "ANALYTICS_SAVE_FAILED"
+    assert "sqlite" not in response.text.lower()
+    assert harness.service.store._attempts == {}
+    assert analytics.list_attempts() == []
+
+
 def test_attempt_uses_private_unique_backend_keys(harness):
     first = harness.start()
     second = harness.start()
@@ -221,6 +293,22 @@ def test_attempt_uses_private_unique_backend_keys(harness):
     second_context = harness.service.store.get(UUID(second["attempt_id"]))
     assert first_context.backend_student_key != second_context.backend_student_key
     assert "backend_student_key" not in first
+    durable = harness.analytics.get_attempt(first["attempt_id"])
+    assert durable.student_id == first["student_id"]
+    assert not hasattr(durable, "backend_student_key")
+    connection = sqlite3.connect(harness.analytics.db_path)
+    try:
+        columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(attempts)")
+        }
+        persisted_values = connection.execute(
+            "SELECT attempt_id, student_id, language FROM attempts WHERE attempt_id = ?",
+            (first["attempt_id"],),
+        ).fetchone()
+    finally:
+        connection.close()
+    assert "backend_student_key" not in columns
+    assert first_context.backend_student_key not in persisted_values
 
 
 def test_same_chunk_sampler_is_reused_for_attempt(harness):
@@ -287,6 +375,16 @@ def test_correct_answer_updates_adaptive_level(harness):
     assert answer.status_code == 200
     assert answer.json()["correct"] is True
     assert answer.json()["current_adaptive_difficulty"] == 4
+    durable = harness.analytics.get_answer(started["attempt_id"], delivered["question_id"])
+    assert durable.status == "confirmed"
+    assert durable.correct is True
+    assert durable.misconception is None
+    assert durable.adaptive_level_before == 3
+    assert durable.adaptive_level_after == 4
+    assert durable.requested_difficulty == 3
+    assert durable.difficulty_score == 3
+    assert durable.question_number == 1
+    assert durable.source_reference == "en_algorithm"
 
 
 def test_incorrect_answer_returns_misconception_and_decrements(harness):
@@ -300,6 +398,17 @@ def test_incorrect_answer_returns_misconception_and_decrements(harness):
     assert answer.json()["correct"] is False
     assert answer.json()["misconception"]
     assert answer.json()["current_adaptive_difficulty"] == 2
+    durable = harness.analytics.get_answer(started["attempt_id"], delivered["question_id"])
+    display_index = next(
+        index for index, option in enumerate(delivered["options"])
+        if option["id"] == option_id
+    )
+    assert durable.status == "confirmed"
+    assert durable.selected_option_index == display_index
+    assert durable.selected_answer_text == delivered["options"][display_index]["text"]
+    assert durable.correct_answer_text == "Correct"
+    assert durable.misconception == answer.json()["misconception"]
+    assert durable.adaptive_level_after == 2
 
 
 def test_identical_duplicate_is_http_idempotent(harness):
@@ -311,6 +420,7 @@ def test_identical_duplicate_is_http_idempotent(harness):
     second = harness.client.post(f'/api/attempts/{started["attempt_id"]}/answers', json=payload)
     assert first.json() == second.json()
     assert harness.record_calls == 1
+    assert len(harness.analytics.list_confirmed_answers()) == 1
 
 
 def test_concurrent_duplicate_is_recorded_once(harness):
@@ -323,6 +433,7 @@ def test_concurrent_duplicate_is_recorded_once(harness):
         responses = list(pool.map(lambda _: harness.client.post(url, json=payload), range(2)))
     assert [response.status_code for response in responses] == [200, 200]
     assert harness.record_calls == 1
+    assert len(harness.analytics.list_confirmed_answers()) == 1
 
 
 def test_different_duplicate_returns_conflict(harness):
@@ -340,6 +451,9 @@ def test_different_duplicate_returns_conflict(harness):
     )
     assert conflict.status_code == 409
     assert conflict.json()["error"]["code"] == "ANSWER_CONFLICT"
+    durable = harness.analytics.get_answer(started["attempt_id"], delivered["question_id"])
+    assert durable.correct is True
+    assert len(harness.analytics.list_confirmed_answers()) == 1
 
 
 def test_post_write_exception_reconciles_without_retry(tmp_path):
@@ -360,6 +474,9 @@ def test_post_write_exception_reconciles_without_retry(tmp_path):
     second = harness.client.post(f'/api/attempts/{started["attempt_id"]}/answers', json=payload)
     assert first.status_code == second.status_code == 200
     assert len(calls) == 1
+    durable = harness.analytics.get_answer(started["attempt_id"], delivered["question_id"])
+    assert durable.status == "confirmed"
+    assert durable.adaptive_level_after == 4
 
 
 def test_definite_failure_allows_safe_retry(tmp_path):
@@ -377,6 +494,8 @@ def test_definite_failure_allows_safe_retry(tmp_path):
     failed = harness.client.post(f'/api/attempts/{started["attempt_id"]}/answers', json=payload)
     assert failed.status_code == 503
     assert failed.json()["error"]["retryable"] is True
+    assert harness.analytics.list_confirmed_answers() == []
+    assert harness.analytics.get_answer(started["attempt_id"], delivered["question_id"]).status == "failed"
 
     def succeeds(student_id, correct, staircase=None):
         calls.append("saved")
@@ -388,6 +507,7 @@ def test_definite_failure_allows_safe_retry(tmp_path):
     retried = harness.client.post(f'/api/attempts/{started["attempt_id"]}/answers', json=payload)
     assert retried.status_code == 200
     assert calls == ["failed", "saved"]
+    assert len(harness.analytics.list_confirmed_answers()) == 1
 
 
 def test_ambiguous_state_blocks_unsafe_retry(tmp_path):
@@ -407,8 +527,100 @@ def test_ambiguous_state_blocks_unsafe_retry(tmp_path):
     first = harness.client.post(f'/api/attempts/{started["attempt_id"]}/answers', json=payload)
     second = harness.client.post(f'/api/attempts/{started["attempt_id"]}/answers', json=payload)
     assert first.status_code == second.status_code == 409
+    assert harness.analytics.list_confirmed_answers() == []
+    assert harness.analytics.get_answer(started["attempt_id"], delivered["question_id"]).status == "pending"
     assert first.json()["error"]["code"] == "ANSWER_SYNC_REQUIRED"
     assert len(calls) == 1
+
+
+def test_analytics_prepare_failure_prevents_adaptive_write_and_can_retry(tmp_path):
+    analytics = ControlledAnalyticsStore(tmp_path / "analytics.db")
+    harness = Harness(tmp_path, analytics_store=analytics)
+    started = harness.start()
+    delivered = harness.next(started["attempt_id"]).json()["question"]
+    option_id = harness.option(started["attempt_id"], correct=True)
+    payload = {"question_id": delivered["question_id"], "selected_option_id": option_id}
+
+    analytics.fail_prepare_once = True
+    failed = harness.client.post(
+        f'/api/attempts/{started["attempt_id"]}/answers', json=payload
+    )
+    assert failed.status_code == 503
+    assert failed.json()["error"]["code"] == "ANALYTICS_SAVE_FAILED"
+    assert "sqlite" not in failed.text.lower()
+    assert harness.record_calls == 0
+    assert analytics.get_answer(started["attempt_id"], delivered["question_id"]) is None
+
+    retried = harness.client.post(
+        f'/api/attempts/{started["attempt_id"]}/answers', json=payload
+    )
+    assert retried.status_code == 200
+    assert harness.record_calls == 1
+    assert len(analytics.list_confirmed_answers()) == 1
+
+
+def test_analytics_confirm_failure_retries_only_analytics(tmp_path):
+    analytics = ControlledAnalyticsStore(tmp_path / "analytics.db")
+    harness = Harness(tmp_path, analytics_store=analytics)
+    started = harness.start()
+    delivered = harness.next(started["attempt_id"]).json()["question"]
+    option_id = harness.option(started["attempt_id"], correct=True)
+    payload = {"question_id": delivered["question_id"], "selected_option_id": option_id}
+
+    analytics.fail_confirm_once = True
+    failed = harness.client.post(
+        f'/api/attempts/{started["attempt_id"]}/answers', json=payload
+    )
+    assert failed.status_code == 503
+    assert failed.json()["error"]["code"] == "ANALYTICS_SAVE_FAILED"
+    assert harness.record_calls == 1
+    pending = analytics.get_answer(started["attempt_id"], delivered["question_id"])
+    assert pending.status == "pending"
+    assert analytics.list_confirmed_answers() == []
+
+    blocked_next = harness.next(started["attempt_id"])
+    assert blocked_next.status_code == 503
+    assert harness.record_calls == 1
+
+    recovered = harness.client.post(
+        f'/api/attempts/{started["attempt_id"]}/answers', json=payload
+    )
+    assert recovered.status_code == 200
+    assert harness.record_calls == 1
+    assert analytics.confirm_calls == 2
+    assert len(analytics.list_confirmed_answers()) == 1
+    context = harness.service.store.get(UUID(started["attempt_id"]))
+    assert len(context.response_logs) == 1
+
+
+def test_analytics_mark_failed_failure_preserves_backend_failure(tmp_path):
+    calls = []
+
+    def fail_before_write(*args, **kwargs):
+        calls.append(1)
+        raise sqlite3.OperationalError("backend write failed")
+
+    analytics = ControlledAnalyticsStore(tmp_path / "analytics.db")
+    harness = Harness(
+        tmp_path,
+        record_fn=fail_before_write,
+        analytics_store=analytics,
+    )
+    started = harness.start()
+    delivered = harness.next(started["attempt_id"]).json()["question"]
+    option_id = harness.option(started["attempt_id"], correct=True)
+    analytics.fail_mark_failed_once = True
+
+    response = harness.client.post(
+        f'/api/attempts/{started["attempt_id"]}/answers',
+        json={"question_id": delivered["question_id"], "selected_option_id": option_id},
+    )
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "ANSWER_SAVE_FAILED"
+    assert calls == [1]
+    assert analytics.mark_failed_calls == 1
+    assert analytics.list_confirmed_answers() == []
+    assert analytics.get_answer(started["attempt_id"], delivered["question_id"]).status == "pending"
 
 
 def test_generation_unavailable_uses_fallback(tmp_path):
@@ -539,6 +751,52 @@ def test_backend_none_marks_attempt_complete(tmp_path):
     assert completed.status_code == 200
     assert completed.json()["status"] == "complete"
     assert completed.json()["complete"] is True
+    durable = harness.analytics.get_attempt(started["attempt_id"])
+    assert durable.status == "completed"
+    assert durable.final_difficulty == 3
+
+
+def test_completed_attempt_and_answers_survive_store_recreation(tmp_path):
+    harness = Harness(tmp_path)
+    started = harness.start(student="durable_student")
+    final_payload = None
+
+    for _ in TOPICS:
+        delivered = harness.next(started["attempt_id"]).json()["question"]
+        option_id = harness.option(started["attempt_id"], correct=True)
+        final_payload = {
+            "question_id": delivered["question_id"],
+            "selected_option_id": option_id,
+        }
+        submitted = harness.client.post(
+            f'/api/attempts/{started["attempt_id"]}/answers',
+            json=final_payload,
+        )
+        assert submitted.status_code == 200
+
+    duplicate_final = harness.client.post(
+        f'/api/attempts/{started["attempt_id"]}/answers',
+        json=final_payload,
+    )
+    assert duplicate_final.status_code == 200
+    assert harness.record_calls == len(TOPICS)
+    assert len(harness.analytics.list_confirmed_answers()) == len(TOPICS)
+
+    completed = harness.next(started["attempt_id"])
+    assert completed.status_code == 200
+    assert completed.json()["complete"] is True
+    first_completion = harness.analytics.get_attempt(started["attempt_id"])
+    assert first_completion.status == "completed"
+    assert first_completion.final_difficulty == 5
+
+    repeated_completion = harness.next(started["attempt_id"])
+    assert repeated_completion.status_code == 200
+    assert harness.analytics.get_attempt(started["attempt_id"]) == first_completion
+
+    reopened = AnalyticsStore(harness.analytics.db_path)
+    reopened.initialize()
+    assert reopened.get_attempt(started["attempt_id"]) == first_completion
+    assert len(reopened.list_confirmed_answers(attempt_id=started["attempt_id"])) == len(TOPICS)
 
 
 def test_results_calculation_and_misconceptions(harness):

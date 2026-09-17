@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+import logging
 from pathlib import Path
 import random
 import secrets
 import sqlite3
+from threading import RLock
 from typing import Any, Callable
 from uuid import UUID
 
@@ -16,6 +18,10 @@ from llm_client import LLMCallError
 from schema import QuestionOut
 from staircase import DB_PATH, Staircase, TOPIC_ORDER
 
+from api.analytics_store import (
+    AnalyticsConflictError,
+    AnalyticsStore,
+)
 from api.attempt_store import AttemptContext, AttemptStore, StoredQuestion
 from api.models import (
     AnswerResponse,
@@ -39,6 +45,7 @@ from api.runtime import PROJECT_ROOT, RuntimeInspector
 
 
 STATE_FIELDS = ("current_difficulty", "topic_index", "questions_answered", "correct_count")
+LOGGER = logging.getLogger("exam_not_found.api.analytics")
 
 
 class ServiceError(Exception):
@@ -88,6 +95,7 @@ class AssessmentService:
         critique_fn: Callable[..., str] = llm_client.critique_question_json,
         staircase_db_path: str | None = None,
         randomizer: random.Random | random.SystemRandom | None = None,
+        analytics_store: AnalyticsStore | None = None,
     ) -> None:
         self.store = store or AttemptStore()
         self.runtime_inspector = runtime_inspector or RuntimeInspector()
@@ -100,6 +108,39 @@ class AssessmentService:
         self.critique_fn = critique_fn
         self.staircase_db_path = staircase_db_path or str((PROJECT_ROOT / DB_PATH).resolve())
         self.randomizer = randomizer or random.SystemRandom()
+        self.analytics_store = analytics_store or AnalyticsStore()
+        self._analytics_initialized = False
+        self._analytics_init_lock = RLock()
+
+    def initialize_analytics(self) -> None:
+        """Initialize the shared store without retaining a SQLite connection."""
+        if self._analytics_initialized:
+            return
+        with self._analytics_init_lock:
+            if not self._analytics_initialized:
+                self.analytics_store.initialize()
+                self._analytics_initialized = True
+
+    @staticmethod
+    def _log_analytics_failure(operation: str, exc: Exception) -> None:
+        LOGGER.error(
+            "Analytics %s failed: %s.%s",
+            operation,
+            type(exc).__module__,
+            type(exc).__name__,
+        )
+
+    def _require_analytics(self) -> None:
+        try:
+            self.initialize_analytics()
+        except Exception as exc:
+            self._log_analytics_failure("initialization", exc)
+            raise ServiceError(
+                503,
+                "ANALYTICS_UNAVAILABLE",
+                "We couldn't safely start this assessment. Please retry.",
+                retryable=True,
+            ) from None
 
     @staticmethod
     def _default_sampler_factory() -> Any:
@@ -137,6 +178,9 @@ class AssessmentService:
         )
 
     def create_attempt(self, request: StartAttemptRequest) -> AttemptResponse:
+        # Refuse to create business state when durable analytics is unavailable.
+        # This avoids presenting an attempt that was never registered durably.
+        self._require_analytics()
         attempt_id = self.store.create_id()
         backend_key = f"{request.student_id}::attempt::{secrets.token_urlsafe(12)}"
         runtime = self.runtime_inspector.for_language(request.language)
@@ -184,6 +228,22 @@ class AssessmentService:
             current_adaptive_difficulty=state["current_difficulty"],
             adaptive_journey=[state["current_difficulty"]],
         )
+        try:
+            self.analytics_store.create_attempt(
+                attempt_id=attempt.attempt_id,
+                student_id=attempt.visible_student_id,
+                language=attempt.language,
+                initial_difficulty=state["current_difficulty"],
+                created_at=attempt.created_at,
+            )
+        except Exception as exc:
+            self._log_analytics_failure("attempt creation", exc)
+            raise ServiceError(
+                503,
+                "ANALYTICS_SAVE_FAILED",
+                "We couldn't safely save this assessment. Please retry.",
+                retryable=True,
+            ) from None
         self.store.add(attempt)
         return self._attempt_response(attempt)
 
@@ -258,6 +318,28 @@ class AssessmentService:
             options=options,
         )
 
+    def _mark_attempt_complete(self, attempt: AttemptContext, final_difficulty: int) -> None:
+        """Persist backend-proven completion without changing backend truth."""
+        attempt.complete = True
+        attempt.current_question_id = None
+        attempt.current_adaptive_difficulty = final_difficulty
+        if attempt.analytics_completion_confirmed:
+            return
+        try:
+            self.analytics_store.mark_attempt_completed(
+                attempt.attempt_id,
+                final_difficulty,
+            )
+        except Exception as exc:
+            self._log_analytics_failure("attempt completion", exc)
+            raise ServiceError(
+                503,
+                "ANALYTICS_SAVE_FAILED",
+                "Your assessment is complete, but its report is still being synchronized. Please retry.",
+                retryable=True,
+            ) from None
+        attempt.analytics_completion_confirmed = True
+
     def _attempt_response(self, attempt: AttemptContext) -> AttemptResponse:
         current = attempt.questions.get(attempt.current_question_id or "")
         answered = len(attempt.response_logs)
@@ -271,7 +353,10 @@ class AssessmentService:
             current_question=self._question_dto(current) if current else None,
             current_answer=current.answer_result if current else None,
             answer_state=current.answer_state if current else None,
-            can_request_next=current is None or current.answer_state == "saved",
+            can_request_next=(
+                current is None
+                or (current.answer_state == "saved" and current.analytics_confirmed)
+            ),
             complete=attempt.complete,
             created_at=attempt.created_at,
         )
@@ -293,6 +378,17 @@ class AssessmentService:
                     progress=self._progress(len(attempt.response_logs)),
                     complete=False,
                 )
+            if (
+                current is not None
+                and current.answer_state == "saved"
+                and not current.analytics_confirmed
+            ):
+                raise ServiceError(
+                    503,
+                    "ANALYTICS_SAVE_FAILED",
+                    "Your answer is saved, but its report is still being synchronized. Retry saving the same answer.",
+                    retryable=True,
+                )
             if current is not None and current.answer_state != "saved":
                 raise ServiceError(
                     409,
@@ -300,6 +396,9 @@ class AssessmentService:
                     "Save the current answer before requesting another question.",
                 )
             if attempt.complete:
+                self._mark_attempt_complete(
+                    attempt, attempt.current_adaptive_difficulty
+                )
                 return NextQuestionResponse(
                     status="complete",
                     current_adaptive_difficulty=attempt.current_adaptive_difficulty,
@@ -314,8 +413,7 @@ class AssessmentService:
             live_completed = False
             live_failed = False
             if topic is None:
-                attempt.complete = True
-                attempt.current_question_id = None
+                self._mark_attempt_complete(attempt, difficulty)
                 return NextQuestionResponse(
                     status="complete",
                     current_adaptive_difficulty=difficulty,
@@ -355,8 +453,7 @@ class AssessmentService:
                         _safe_close(staircase)
 
             if live_completed:
-                attempt.complete = True
-                attempt.current_question_id = None
+                self._mark_attempt_complete(attempt, difficulty)
                 return NextQuestionResponse(
                     status="complete",
                     current_adaptive_difficulty=difficulty,
@@ -370,8 +467,7 @@ class AssessmentService:
                     # Reconcile with the current SQLite truth after the failed live call.
                     state, topic, difficulty = self._current_generation_state(attempt)
                     if topic is None:
-                        attempt.complete = True
-                        attempt.current_question_id = None
+                        self._mark_attempt_complete(attempt, difficulty)
                         return NextQuestionResponse(
                             status="complete",
                             current_adaptive_difficulty=difficulty,
@@ -428,6 +524,108 @@ class AssessmentService:
                 progress=self._progress(len(attempt.response_logs)),
                 complete=False,
             )
+
+    def _prepare_analytics_answer(
+        self,
+        attempt: AttemptContext,
+        stored: StoredQuestion,
+        selected_option_id: str,
+    ) -> None:
+        """Persist immutable submission data before adaptive state is touched.
+
+        ``selected_option_index`` is the zero-based browser/display position in
+        the server-frozen option order.  Correctness remains derived from the
+        private display-ID-to-original-option mapping.
+        """
+        original_index = stored.option_to_original[selected_option_id]
+        display_index = stored.option_ids.index(selected_option_id)
+        selected_option = stored.question.options[original_index]
+        correct_option = next(option for option in stored.question.options if option.correct)
+        is_correct = bool(selected_option.correct)
+        difficulty_score = (
+            stored.question.difficulty_score
+            or stored.question.difficulty.difficulty_score
+            or stored.requested_difficulty
+        )
+        try:
+            self.analytics_store.prepare_answer(
+                attempt_id=attempt.attempt_id,
+                question_id=stored.question_id,
+                question_number=stored.question_number,
+                language=attempt.language,
+                topic=stored.question.topic,
+                question_text=stored.question.question,
+                selected_option_index=display_index,
+                selected_answer_text=selected_option.text,
+                correct_answer_text=correct_option.text,
+                correct=is_correct,
+                misconception=None if is_correct else selected_option.misconception,
+                difficulty_score=difficulty_score,
+                requested_difficulty=stored.requested_difficulty,
+                adaptive_level_before=stored.state_before["current_difficulty"],
+                # The authoritative post-answer level is unknown until the
+                # existing reconciliation path proves the backend write.
+                adaptive_level_after=None,
+                source_reference=stored.question.source_chunk_id,
+            )
+        except AnalyticsConflictError as exc:
+            self._log_analytics_failure("answer preparation conflict", exc)
+            raise ServiceError(
+                409,
+                "ANSWER_SYNC_REQUIRED",
+                "Your answer could not be safely synchronized. Please contact the assessment administrator.",
+            ) from None
+        except Exception as exc:
+            self._log_analytics_failure("answer preparation", exc)
+            raise ServiceError(
+                503,
+                "ANALYTICS_SAVE_FAILED",
+                "We couldn't safely prepare this answer. Please retry.",
+                retryable=True,
+            ) from None
+
+    def _confirm_analytics_answer(
+        self,
+        attempt: AttemptContext,
+        stored: StoredQuestion,
+        adaptive_level_after: int,
+    ) -> None:
+        """Confirm analytics only after existing backend reconciliation succeeds."""
+        if stored.analytics_confirmed:
+            return
+        try:
+            self.analytics_store.confirm_answer(
+                attempt.attempt_id,
+                stored.question_id,
+                adaptive_level_after=adaptive_level_after,
+            )
+        except Exception as exc:
+            self._log_analytics_failure("answer confirmation", exc)
+            raise ServiceError(
+                503,
+                "ANALYTICS_SAVE_FAILED",
+                "Your answer is saved, but its report is still being synchronized. Please retry the same answer.",
+                retryable=True,
+            ) from None
+        stored.analytics_confirmed = True
+
+    def _mark_analytics_answer_failed(
+        self,
+        attempt: AttemptContext,
+        stored: StoredQuestion,
+    ) -> None:
+        """Best-effort mirror of a definite backend failure.
+
+        Failure here must never replace the existing answer-save error or cause
+        the non-idempotent backend update to run again.
+        """
+        try:
+            self.analytics_store.mark_answer_failed(
+                attempt.attempt_id,
+                stored.question_id,
+            )
+        except Exception as exc:
+            self._log_analytics_failure("answer failure marking", exc)
 
     def _persist_answer(
         self,
@@ -556,6 +754,11 @@ class AssessmentService:
                     "This question has already been submitted with another option.",
                 )
             if stored.answer_state == "saved" and stored.answer_result is not None:
+                self._confirm_analytics_answer(
+                    attempt,
+                    stored,
+                    stored.answer_result.current_adaptive_difficulty,
+                )
                 return stored.answer_result
             if stored.answer_state == "ambiguous":
                 raise ServiceError(
@@ -567,14 +770,32 @@ class AssessmentService:
                 raise ServiceError(409, "ANSWER_IN_PROGRESS", "This answer is already being saved.")
 
             stored.submitted_option_id = request.selected_option_id
+            # Analytics preparation is deliberately before record_answer(). If
+            # it fails, backend adaptive state is left untouched.
+            self._prepare_analytics_answer(
+                attempt,
+                stored,
+                request.selected_option_id,
+            )
             stored.answer_state = "saving"
             selected_index = stored.option_to_original[request.selected_option_id]
             correct = bool(stored.question.options[selected_index].correct)
             outcome, state = self._persist_answer(attempt, stored, correct)
             stored.answer_state = outcome
             if outcome == "saved" and state is not None:
-                return self._finalize_answer(attempt, stored, request.selected_option_id, state)
+                result = self._finalize_answer(
+                    attempt, stored, request.selected_option_id, state
+                )
+                # Finalize business state first: an analytics failure must not
+                # make record_answer eligible to run again.
+                self._confirm_analytics_answer(
+                    attempt,
+                    stored,
+                    state["current_difficulty"],
+                )
+                return result
             if outcome == "definitely_failed":
+                self._mark_analytics_answer_failed(attempt, stored)
                 raise ServiceError(
                     503,
                     "ANSWER_SAVE_FAILED",

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+import hmac
 import logging
 import os
 from uuid import UUID
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,7 +24,9 @@ from api.models import (
     StartAttemptRequest,
     SubmitAnswerRequest,
     TeacherDemoResponse,
+    TeacherLiveResponse,
 )
+from api.teacher_service import TeacherService
 
 
 LOGGER = logging.getLogger("exam_not_found.api")
@@ -33,14 +37,57 @@ def _origins() -> list[str]:
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
-def create_app(service: AssessmentService | None = None) -> FastAPI:
+def _require_teacher_authorization(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+) -> None:
+    configured_token = os.getenv("TEACHER_DASHBOARD_TOKEN")
+    if not configured_token:
+        raise ServiceError(
+            503,
+            "TEACHER_AUTH_NOT_CONFIGURED",
+            "Live teacher analytics is not configured.",
+        )
+
+    parts = authorization.split() if authorization else []
+    if (
+        len(parts) != 2
+        or parts[0].lower() != "bearer"
+        or not parts[1]
+        or not hmac.compare_digest(parts[1], configured_token)
+    ):
+        raise ServiceError(
+            401,
+            "TEACHER_AUTH_REQUIRED",
+            "Teacher authorization is required.",
+        )
+
+
+def create_app(
+    service: AssessmentService | None = None,
+    *,
+    teacher_service: TeacherService | None = None,
+) -> FastAPI:
+    assessment_service = service or AssessmentService()
+    live_teacher_service = teacher_service or TeacherService(
+        assessment_service.analytics_store
+    )
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        # AnalyticsStore retains only path/configuration; initialization opens
+        # and closes its own SQLite connection.
+        assessment_service.initialize_analytics()
+        yield
+
     application = FastAPI(
         title="404 Exam Not Found API",
         version="1.0.0",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
+        lifespan=lifespan,
     )
-    application.state.assessment_service = service or AssessmentService()
+    application.state.assessment_service = assessment_service
+    application.state.teacher_service = live_teacher_service
     application.add_middleware(
         CORSMiddleware,
         allow_origins=_origins(),
@@ -114,6 +161,27 @@ def create_app(service: AssessmentService | None = None) -> FastAPI:
     @application.get("/api/demo/teacher", response_model=TeacherDemoResponse)
     def demo_teacher() -> TeacherDemoResponse:
         return teacher_demo()
+
+    @application.get(
+        "/api/teacher/live",
+        response_model=TeacherLiveResponse,
+        dependencies=[Depends(_require_teacher_authorization)],
+    )
+    def live_teacher(request: Request) -> TeacherLiveResponse:
+        try:
+            return request.app.state.teacher_service.live_analytics()
+        except Exception as exc:
+            LOGGER.error(
+                "Live teacher analytics failed: %s.%s",
+                type(exc).__module__,
+                type(exc).__name__,
+            )
+            raise ServiceError(
+                503,
+                "TEACHER_ANALYTICS_UNAVAILABLE",
+                "Live teacher analytics is temporarily unavailable.",
+                retryable=True,
+            ) from None
 
     return application
 

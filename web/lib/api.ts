@@ -97,6 +97,58 @@ const teacherSchema = z.object({
   insights: z.array(z.string()),
 });
 
+export const teacherLiveSchema = z.object({
+  data_source: z.literal("live"),
+  data_status: z.enum(["empty", "available"]),
+  summary: z.object({
+    total_students: z.number().int().nonnegative(),
+    total_attempts: z.number().int().nonnegative(),
+    completed_attempts: z.number().int().nonnegative(),
+    in_progress_attempts: z.number().int().nonnegative(),
+    completion_rate: z.number().min(0).max(100),
+    confirmed_answers: z.number().int().nonnegative(),
+    correct_answers: z.number().int().nonnegative(),
+    incorrect_answers: z.number().int().nonnegative(),
+    overall_accuracy: z.number().min(0).max(100),
+    average_score: z.number().nonnegative(),
+    average_difficulty: z.number().min(0).max(5),
+    misconception_count: z.number().int().nonnegative(),
+  }).strict(),
+  topics: z.array(z.object({
+    topic: z.string(),
+    attempted: z.number().int().nonnegative(),
+    correct: z.number().int().nonnegative(),
+    incorrect: z.number().int().nonnegative(),
+    accuracy: z.number().min(0).max(100),
+  }).strict()),
+  misconceptions: z.array(z.object({
+    misconception: z.string(),
+    count: z.number().int().nonnegative(),
+  }).strict()),
+  difficulty: z.array(z.object({
+    difficulty: z.number().int().min(1).max(5),
+    count: z.number().int().nonnegative(),
+  }).strict()),
+  score_distribution: z.array(z.object({
+    band: z.string(),
+    attempts: z.number().int().nonnegative(),
+  }).strict()),
+  students: z.array(z.object({
+    attempt_id: z.string(),
+    student_id: z.string(),
+    language: languageSchema,
+    status: z.enum(["in_progress", "completed"]),
+    answered: z.number().int().nonnegative(),
+    correct: z.number().int().nonnegative(),
+    incorrect: z.number().int().nonnegative(),
+    accuracy: z.number().min(0).max(100),
+    initial_difficulty: z.number().int().min(1).max(5),
+    final_difficulty: z.number().int().min(1).max(5).nullable(),
+    created_at: z.string(),
+    completed_at: z.string().nullable(),
+  }).strict()),
+}).strict();
+
 export type Language = z.infer<typeof languageSchema>;
 export type Question = z.infer<typeof questionSchema>;
 export type Answer = z.infer<typeof answerSchema>;
@@ -104,6 +156,7 @@ export type Attempt = z.infer<typeof attemptSchema>;
 export type Results = z.infer<typeof resultsSchema>;
 export type Health = z.infer<typeof healthSchema>;
 export type TeacherDemo = z.infer<typeof teacherSchema>;
+export type TeacherLive = z.infer<typeof teacherLiveSchema>;
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public retryable: boolean, public status: number) {
@@ -133,6 +186,36 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   return schema.parse(payload);
 }
 
+const errorEnvelopeSchema = z.object({
+  error: z.object({ code: z.string(), message: z.string(), retryable: z.boolean() }),
+});
+
+async function teacherRequest<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...init,
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", ...init?.headers },
+    });
+  } catch {
+    throw new ApiError("TEACHER_NETWORK_UNAVAILABLE", "The teacher workspace is unavailable. Please retry.", true, 0);
+  }
+  const payload: unknown = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const parsed = errorEnvelopeSchema.safeParse(payload);
+    if (parsed.success) {
+      throw new ApiError(parsed.data.error.code, parsed.data.error.message, parsed.data.error.retryable, response.status);
+    }
+    throw new ApiError("TEACHER_REQUEST_FAILED", "The teacher workspace is unavailable. Please retry.", response.status >= 500, response.status);
+  }
+  const parsed = schema.safeParse(payload);
+  if (!parsed.success) {
+    throw new ApiError("TEACHER_RESPONSE_INVALID", "The teacher workspace returned an invalid response.", true, 502);
+  }
+  return parsed.data;
+}
+
 export const api = {
   getHealth: () => request("/api/health", healthSchema),
   startAttempt: (studentId: string, language: Language) => request("/api/attempts", attemptSchema, {
@@ -146,4 +229,18 @@ export const api = {
   ),
   getResults: (attemptId: string) => request(`/api/attempts/${attemptId}/results`, resultsSchema),
   getTeacherDemo: () => request("/api/demo/teacher", teacherSchema),
+};
+
+export const teacherApi = {
+  unlock: (credential: string) => teacherRequest(
+    "/api/teacher/session",
+    z.object({ authenticated: z.literal(true) }).strict(),
+    { method: "POST", body: JSON.stringify({ credential }) },
+  ),
+  logout: () => teacherRequest(
+    "/api/teacher/session",
+    z.object({ authenticated: z.literal(false) }).strict(),
+    { method: "DELETE" },
+  ),
+  getLive: () => teacherRequest("/api/teacher/live", teacherLiveSchema),
 };

@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import { TeacherDashboard } from "./teacher-dashboard";
-import type { TeacherDemo } from "@/lib/api";
+import type { TeacherLive } from "@/lib/api";
+import { liveTeacherData } from "@/test/teacher-fixture";
 
 vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -9,25 +10,41 @@ vi.mock("recharts", () => ({
   Bar: () => null, CartesianGrid: () => null, Tooltip: () => null, XAxis: () => null, YAxis: () => null,
 }));
 
-const demo: TeacherDemo = {
-  label: "DEMO CLASS DATA · NOT LIVE",
-  summary: { students: 10, completion_rate: 80, completed_assessments: 8, average_accuracy: 72, average_correct: 3.6, average_total: 5, distinct_misconceptions: 4, average_difficulty: 3.1 },
-  score_distribution: [{ band: "61–80%", students: 4 }],
-  misconceptions: [{ label: "Treats the range stop boundary as inclusive even when Python excludes the final value", occurrences: 3 }],
-  topics: [{ topic: "variables and assignment", error_rate: 45 }],
-  difficulty: [{ difficulty: 3, count: 12 }],
-  students: [{ student_id: "demo-01", student: "Amina Hassan", completed: true, score: "4 / 5", accuracy: 80, correct: 4, incorrect: 1, main_weak_topic: "variables and assignment" }],
-  insights: [],
-};
-
 describe("TeacherDashboard", () => {
-  it("clearly labels deterministic demo data and renders its student table", () => {
-    render(<TeacherDashboard data={demo} />);
-    expect(screen.getByText("DEMO CLASS DATA · NOT LIVE")).toBeInTheDocument();
-    expect(screen.getByText("Amina Hassan")).toBeInTheDocument();
-    expect(screen.getByText("Misconception signals")).toBeInTheDocument();
-    expect(screen.getAllByText("Variables and Assignment").length).toBeGreaterThan(0);
-    expect(screen.getByText("Full signal descriptions")).toBeInTheDocument();
+  it("renders durable live metrics without a demo label", () => {
+    render(<TeacherDashboard data={liveTeacherData} onLogout={vi.fn()} />);
+    expect(screen.getByText("LIVE CLASS DATA")).toBeInTheDocument();
+    expect(screen.queryByText(/DEMO CLASS DATA/i)).not.toBeInTheDocument();
+    expect(screen.getByText("57.1%")).toBeInTheDocument();
+    expect(screen.getByText("Variables and Assignment")).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
+    expect(screen.getByText("In progress")).toBeInTheDocument();
+  });
+
+  it("renders Arabic values, all difficulty levels, and separate attempt rows", () => {
+    render(<TeacherDashboard data={liveTeacherData} onLogout={vi.fn()} />);
+    expect(screen.getAllByText("طالب ١").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("الحلقات").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("يخلط بين قيمة المتغير والنص").length).toBeGreaterThan(0);
+    expect(screen.getByText("Level 1")).toBeInTheDocument();
     expect(screen.getByText("Level 5")).toBeInTheDocument();
+    expect(screen.getByText(/11111111/)).toBeInTheDocument();
+    expect(screen.getByText(/22222222/)).toBeInTheDocument();
+  });
+
+  it("shows an honest live empty state without fabricated metrics", () => {
+    const empty: TeacherLive = {
+      ...liveTeacherData,
+      data_status: "empty",
+      summary: { total_students: 0, total_attempts: 0, completed_attempts: 0, in_progress_attempts: 0, completion_rate: 0, confirmed_answers: 0, correct_answers: 0, incorrect_answers: 0, overall_accuracy: 0, average_score: 0, average_difficulty: 0, misconception_count: 0 },
+      topics: [], misconceptions: [], students: [],
+      score_distribution: liveTeacherData.score_distribution.map((row) => ({ ...row, attempts: 0 })),
+      difficulty: liveTeacherData.difficulty.map((row) => ({ ...row, count: 0 })),
+    };
+    render(<TeacherDashboard data={empty} onLogout={vi.fn()} />);
+    expect(screen.getByText("Your class analytics will appear here.")).toBeInTheDocument();
+    expect(screen.getByText(/no persisted student attempts yet/i)).toBeInTheDocument();
+    expect(screen.queryByText("Overall accuracy")).not.toBeInTheDocument();
+    expect(screen.queryByText(/DEMO/i)).not.toBeInTheDocument();
   });
 });

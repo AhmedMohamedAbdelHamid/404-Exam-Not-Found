@@ -25,6 +25,7 @@ class StoredQuestion:
     answer_state: AnswerState = "open"
     submitted_option_id: str | None = None
     answer_result: AnswerResponse | None = None
+    analytics_confirmed: bool = False
 
 
 @dataclass
@@ -43,6 +44,7 @@ class AttemptContext:
     response_logs: list[dict[str, Any]] = field(default_factory=list)
     adaptive_journey: list[int] = field(default_factory=list)
     complete: bool = False
+    analytics_completion_confirmed: bool = False
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     lock: RLock = field(default_factory=RLock, repr=False)
 

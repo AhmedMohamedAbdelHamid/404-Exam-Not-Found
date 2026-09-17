@@ -189,4 +189,68 @@ class TeacherDemoResponse(BaseModel):
     insights: list[str]
 
 
+class TeacherLiveSummary(BaseModel):
+    total_students: int
+    total_attempts: int
+    completed_attempts: int
+    in_progress_attempts: int
+    completion_rate: float
+    confirmed_answers: int
+    correct_answers: int
+    incorrect_answers: int
+    overall_accuracy: float
+    average_score: float
+    average_difficulty: float
+    misconception_count: int
+
+
+class TeacherLiveTopicRow(BaseModel):
+    topic: str
+    attempted: int
+    correct: int
+    incorrect: int
+    accuracy: float
+
+
+class TeacherLiveMisconceptionRow(BaseModel):
+    misconception: str
+    count: int
+
+
+class TeacherLiveDifficultyRow(BaseModel):
+    difficulty: int = Field(ge=1, le=5)
+    count: int
+
+
+class TeacherLiveScoreBandRow(BaseModel):
+    band: str
+    attempts: int
+
+
+class TeacherLiveAttemptRow(BaseModel):
+    attempt_id: str
+    student_id: str
+    language: LanguageCode
+    status: Literal["in_progress", "completed"]
+    answered: int
+    correct: int
+    incorrect: int
+    accuracy: float
+    initial_difficulty: int = Field(ge=1, le=5)
+    final_difficulty: int | None = Field(default=None, ge=1, le=5)
+    created_at: datetime
+    completed_at: datetime | None
+
+
+class TeacherLiveResponse(BaseModel):
+    data_source: Literal["live"] = "live"
+    data_status: Literal["empty", "available"]
+    summary: TeacherLiveSummary
+    topics: list[TeacherLiveTopicRow]
+    misconceptions: list[TeacherLiveMisconceptionRow]
+    difficulty: list[TeacherLiveDifficultyRow]
+    score_distribution: list[TeacherLiveScoreBandRow]
+    students: list[TeacherLiveAttemptRow]
+
+
 AttemptResponse.model_rebuild()

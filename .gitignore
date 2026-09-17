@@ -1,6 +1,13 @@
 chroma_db/
 __pycache__/
+.pytest_cache/
+coverage/
+.coverage
 *.pyc
+.venv/
 *zip
 .env
 *.db
+*.db-wal
+*.db-shm
+*.log

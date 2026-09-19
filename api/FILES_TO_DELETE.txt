@@ -1,0 +1,18 @@
+Delete these 16 files from your repo (they only existed for the teacher token/login):
+
+app/api/teacher/live/route.ts
+app/api/teacher/live/route.test.ts
+app/api/teacher/session/route.ts
+app/api/teacher/session/route.test.ts
+components/teacher-access.tsx
+components/teacher-access.test.tsx
+lib/teacher-auth.ts
+lib/teacher-auth.test.ts
+web/app/api/teacher/live/route.ts
+web/app/api/teacher/live/route.test.ts
+web/app/api/teacher/session/route.ts
+web/app/api/teacher/session/route.test.ts
+web/components/teacher-access.tsx
+web/components/teacher-access.test.tsx
+web/lib/teacher-auth.ts
+web/lib/teacher-auth.test.ts

@@ -1,5 +1,13 @@
+# Vercel Python function dependencies (web/api/).
 fastapi>=0.115,<1
-uvicorn[standard]>=0.34,<1
 pydantic>=2.10,<3
-httpx>=0.28,<1
-pytest>=8.3,<9
+
+# Question generation.
+google-genai
+python-dotenv
+
+# Durable state + retrieval: Supabase Postgres (chunks, attempts, answers,
+# student_state, attempt_contexts) -- replaces local SQLite/Chroma/in-memory
+# state. No chromadb/sentence-transformers needed: retrieval.py filters
+# chunks by (topic, language) only -- see its module docstring.
+psycopg[binary]

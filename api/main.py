@@ -11,9 +11,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.assessment_service import AssessmentService, ServiceError
-from api.demo_service import teacher_demo
-from api.models import (
+from assessment_service import AssessmentService, ServiceError
+from demo_service import teacher_demo
+from models import (
     AnswerResponse,
     AttemptResponse,
     ErrorDetail,
@@ -26,7 +26,7 @@ from api.models import (
     TeacherDemoResponse,
     TeacherLiveResponse,
 )
-from api.teacher_service import TeacherService
+from teacher_service import TeacherService
 
 
 LOGGER = logging.getLogger("exam_not_found.api")

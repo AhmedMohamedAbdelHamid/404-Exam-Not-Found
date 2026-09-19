@@ -3,7 +3,7 @@ from __future__ import annotations
 from frontend.analytics import class_analytics
 from frontend.dummy_data import DEMO_CLASS_SESSIONS
 
-from api.models import TeacherDemoResponse
+from models import TeacherDemoResponse
 
 
 def teacher_demo() -> TeacherDemoResponse:

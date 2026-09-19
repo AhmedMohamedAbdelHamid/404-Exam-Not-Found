@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
-from api.analytics_store import AnalyticsStore, AnswerRecord, AttemptRecord
-from api.models import (
+from analytics_store import AnalyticsStore, AnswerRecord, AttemptRecord
+from models import (
     TeacherLiveAttemptRow,
     TeacherLiveDifficultyRow,
     TeacherLiveMisconceptionRow,

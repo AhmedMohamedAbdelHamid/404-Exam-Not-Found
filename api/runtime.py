@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import importlib.util
 import os
 from pathlib import Path
-import sqlite3
 from threading import RLock
 import time
 from typing import Callable
@@ -12,24 +10,31 @@ from backup_pool import get_backup_question
 import llm_client
 from staircase import TOPIC_ORDER
 
-from api.models import HealthResponse, LanguageCode, RuntimeStatus
+from models import HealthResponse, LanguageCode, RuntimeStatus
+from db import connection
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_COLLECTIONS = {"en": "chunks_en", "ar": "chunks_ar"}
+PROJECT_ROOT = Path(__file__).resolve().parent
+EXPECTED_LANGUAGES = {"en", "ar"}
 TRANSIENT_PROVIDER_CODES = {429, 500, 502, 503, 504}
 DEFAULT_LIVE_COOLDOWN_SECONDS = 120.0
 
 
-def _collection_names(root: Path) -> set[str]:
-    database = root / "chroma_db" / "chroma.sqlite3"
-    if not database.is_file():
+def _chunk_languages() -> set[str]:
+    """Which languages currently have rows in Supabase's chunks table --
+    the Postgres-backed replacement for the original's local Chroma
+    collection check (see retrieval.py). Field names below (chroma_configured
+    etc.) are kept as-is for API/frontend compatibility even though the
+    backing store changed.
+    """
+    if not os.getenv("DATABASE_URL"):
         return set()
-    connection = sqlite3.connect(f"file:{database.resolve().as_posix()}?mode=ro", uri=True)
     try:
-        return {str(row[0]) for row in connection.execute("SELECT name FROM collections")}
-    finally:
-        connection.close()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT language FROM chunks")
+            return {row["language"] for row in cur.fetchall()}
+    except Exception:
+        return set()
 
 
 class RuntimeInspector:
@@ -76,17 +81,15 @@ class RuntimeInspector:
         return True
 
     def collection_status(self) -> tuple[bool, bool, bool]:
-        chroma_dir = self.project_root / "chroma_db"
-        chroma_configured = chroma_dir.is_dir() and (chroma_dir / "chroma.sqlite3").is_file()
         try:
-            names = _collection_names(self.project_root) if chroma_configured else set()
-        except (sqlite3.Error, OSError):
+            names = _chunk_languages()
+        except Exception:
             names = set()
-        package_available = importlib.util.find_spec("chromadb") is not None
+        database_configured = bool(os.getenv("DATABASE_URL"))
         return (
-            chroma_configured and package_available,
-            EXPECTED_COLLECTIONS["en"] in names,
-            EXPECTED_COLLECTIONS["ar"] in names,
+            database_configured and bool(names),
+            "en" in names,
+            "ar" in names,
         )
 
     @staticmethod

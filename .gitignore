@@ -1,13 +1,4 @@
-chroma_db/
-__pycache__/
-.pytest_cache/
+node_modules/
+.next/
 coverage/
-.coverage
-*.pyc
-.venv/
-*zip
-.env
-*.db
-*.db-wal
-*.db-shm
-*.log
+.env.local

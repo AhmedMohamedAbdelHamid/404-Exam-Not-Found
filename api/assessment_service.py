@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 import random
 import secrets
-import sqlite3
+import psycopg
 from threading import RLock
 from typing import Any, Callable
 from uuid import UUID
@@ -18,12 +18,12 @@ from llm_client import LLMCallError
 from schema import QuestionOut
 from staircase import DB_PATH, Staircase, TOPIC_ORDER
 
-from api.analytics_store import (
+from analytics_store import (
     AnalyticsConflictError,
     AnalyticsStore,
 )
-from api.attempt_store import AttemptContext, AttemptStore, StoredQuestion
-from api.models import (
+from attempt_store import AttemptContext, AttemptStore, StoredQuestion
+from models import (
     AnswerResponse,
     AttemptResponse,
     JourneyPoint,
@@ -41,7 +41,7 @@ from api.models import (
     SubmitAnswerRequest,
     TopicResult,
 )
-from api.runtime import PROJECT_ROOT, RuntimeInspector
+from runtime import PROJECT_ROOT, RuntimeInspector
 
 
 STATE_FIELDS = ("current_difficulty", "topic_index", "questions_answered", "correct_count")
@@ -97,8 +97,8 @@ class AssessmentService:
         randomizer: random.Random | random.SystemRandom | None = None,
         analytics_store: AnalyticsStore | None = None,
     ) -> None:
-        self.store = store or AttemptStore()
         self.runtime_inspector = runtime_inspector or RuntimeInspector()
+        self.store = store or AttemptStore(runtime_inspector=self.runtime_inspector)
         self.staircase_factory = staircase_factory or (lambda path: Staircase(db_path=path))
         self.sampler_factory = sampler_factory or self._default_sampler_factory
         self.get_next_fn = get_next_fn
@@ -254,7 +254,7 @@ class AssessmentService:
     @staticmethod
     def _known_generation_error(exc: Exception) -> bool:
         module_name = type(exc).__module__
-        return isinstance(exc, (GenerationUnavailable, LLMCallError, sqlite3.Error, OSError, ImportError)) or module_name.startswith(
+        return isinstance(exc, (GenerationUnavailable, LLMCallError, psycopg.Error, OSError, ImportError)) or module_name.startswith(
             ("chromadb.", "google.genai.", "httpx.")
         )
 
@@ -286,7 +286,7 @@ class AssessmentService:
             return dict(state), topic, difficulty
         except ServiceError:
             raise
-        except (sqlite3.Error, OSError) as exc:
+        except (psycopg.Error, OSError) as exc:
             raise ServiceError(
                 503,
                 "GENERATION_UNAVAILABLE",
@@ -368,6 +368,15 @@ class AssessmentService:
 
     def next_question(self, attempt_id: UUID) -> NextQuestionResponse:
         attempt = self._attempt(attempt_id)
+        try:
+            return self._next_question_locked(attempt)
+        finally:
+            # Vercel functions are stateless -- persist whatever this
+            # request mutated (questions, difficulty, completion, ...)
+            # back to Postgres before returning. See attempt_store.py.
+            self.store.save(attempt)
+
+    def _next_question_locked(self, attempt: AttemptContext) -> NextQuestionResponse:
         with attempt.lock:
             current = attempt.questions.get(attempt.current_question_id or "")
             if current is not None and current.answer_state == "open":
@@ -477,7 +486,7 @@ class AssessmentService:
                 if topic is not None and attempt.runtime.fallback_available:
                     try:
                         question = self.backup_fn(topic, attempt.language, difficulty)
-                    except (sqlite3.Error, OSError):
+                    except (psycopg.Error, OSError):
                         question = None
                 if question is None:
                     raise ServiceError(
@@ -741,6 +750,12 @@ class AssessmentService:
 
     def submit_answer(self, attempt_id: UUID, request: SubmitAnswerRequest) -> AnswerResponse:
         attempt = self._attempt(attempt_id)
+        try:
+            return self._submit_answer_locked(attempt, request)
+        finally:
+            self.store.save(attempt)
+
+    def _submit_answer_locked(self, attempt: AttemptContext, request: SubmitAnswerRequest) -> AnswerResponse:
         with attempt.lock:
             stored = attempt.questions.get(request.question_id)
             if stored is None or attempt.current_question_id != request.question_id:

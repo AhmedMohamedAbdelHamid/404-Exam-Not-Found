@@ -1,29 +1,24 @@
-"""Durable, API-owned assessment analytics persistence.
+"""Durable, API-owned assessment analytics persistence -- Postgres-backed.
 
-This module deliberately has no dependency on the assessment service or the
-generation backend.  Each operation opens and closes its own SQLite connection
-so no connection crosses FastAPI worker threads.  Write operations use
-``BEGIN IMMEDIATE`` to make read/compare/write idempotency decisions atomic.
+This is a straight translation of the original SQLite analytics_store.py
+(repo root, main branch) onto Postgres: identical dataclasses, identical
+validation rules, identical method names and idempotency semantics.
+Only the storage layer changed (SQLite file -> Supabase Postgres), for
+the same reason as staircase.py -- see db.py.
 """
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import os
-from pathlib import Path
-import sqlite3
-from typing import Iterator, Literal
+from typing import Literal
 from uuid import UUID
+
+from db import connection
 
 
 AttemptStatus = Literal["in_progress", "completed"]
 AnswerStatus = Literal["pending", "confirmed", "failed"]
-
-DEFAULT_ANALYTICS_DB_PATH = Path(__file__).resolve().parents[1] / "assessment_analytics.db"
-ANALYTICS_DB_PATH_ENV = "ASSESSMENT_ANALYTICS_DB_PATH"
-DEFAULT_BUSY_TIMEOUT_MS = 5_000
 
 
 class AnalyticsStoreError(Exception):
@@ -85,11 +80,6 @@ class AnalyticsSnapshot:
     confirmed_answers: tuple[AnswerRecord, ...]
 
 
-def _configured_path() -> Path:
-    configured = os.getenv(ANALYTICS_DB_PATH_ENV)
-    return Path(configured).expanduser() if configured else DEFAULT_ANALYTICS_DB_PATH
-
-
 def _identifier(value: str | UUID, field: str) -> str:
     normalized = str(value).strip()
     if not normalized:
@@ -122,7 +112,7 @@ def _utc_iso(value: datetime | None = None) -> str:
     return moment.astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
-def _attempt_from_row(row: sqlite3.Row) -> AttemptRecord:
+def _attempt_from_row(row: dict) -> AttemptRecord:
     return AttemptRecord(
         attempt_id=row["attempt_id"],
         student_id=row["student_id"],
@@ -135,7 +125,7 @@ def _attempt_from_row(row: sqlite3.Row) -> AttemptRecord:
     )
 
 
-def _answer_from_row(row: sqlite3.Row) -> AnswerRecord:
+def _answer_from_row(row: dict) -> AnswerRecord:
     return AnswerRecord(
         attempt_id=row["attempt_id"],
         question_id=row["question_id"],
@@ -162,55 +152,16 @@ def _answer_from_row(row: sqlite3.Row) -> AnswerRecord:
 class AnalyticsStore:
     """Small durable store for assessment attempts and submitted answers."""
 
-    def __init__(
-        self,
-        db_path: str | os.PathLike[str] | None = None,
-        *,
-        busy_timeout_ms: int = DEFAULT_BUSY_TIMEOUT_MS,
-    ) -> None:
-        self.db_path = Path(db_path).expanduser() if db_path is not None else _configured_path()
-        if busy_timeout_ms < 0:
-            raise AnalyticsValidationError("busy_timeout_ms must not be negative.")
-        self.busy_timeout_ms = busy_timeout_ms
-
-    def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(
-            str(self.db_path),
-            timeout=self.busy_timeout_ms / 1_000,
-        )
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute(f"PRAGMA busy_timeout = {self.busy_timeout_ms:d}")
-        return connection
-
-    @contextmanager
-    def _read(self) -> Iterator[sqlite3.Connection]:
-        connection = self._connect()
-        try:
-            yield connection
-        finally:
-            connection.close()
-
-    @contextmanager
-    def _write(self) -> Iterator[sqlite3.Connection]:
-        connection = self._connect()
-        try:
-            connection.execute("BEGIN IMMEDIATE")
-            yield connection
-            connection.commit()
-        except Exception:
-            connection.rollback()
-            raise
-        finally:
-            connection.close()
+    def __init__(self) -> None:
+        pass
 
     def initialize(self) -> None:
-        """Create the v1 schema; safe to call repeatedly and concurrently."""
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        connection = self._connect()
-        try:
-            connection.execute("PRAGMA journal_mode = WAL")
-            connection.executescript(
+        """Create the v1 schema; safe to call repeatedly and concurrently.
+        In production this is normally already applied as a Supabase
+        migration -- call this in tests/local dev against a scratch DB.
+        """
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS attempts (
                     attempt_id TEXT PRIMARY KEY,
@@ -229,7 +180,7 @@ class AnalyticsStore:
                 );
 
                 CREATE TABLE IF NOT EXISTS answers (
-                    attempt_id TEXT NOT NULL,
+                    attempt_id TEXT NOT NULL REFERENCES attempts(attempt_id) ON DELETE RESTRICT,
                     question_id TEXT NOT NULL,
                     question_number INTEGER NOT NULL CHECK (question_number >= 1),
                     language TEXT NOT NULL CHECK (language IN ('en', 'ar')),
@@ -238,7 +189,7 @@ class AnalyticsStore:
                     selected_option_index INTEGER NOT NULL CHECK (selected_option_index >= 0),
                     selected_answer_text TEXT NOT NULL,
                     correct_answer_text TEXT NOT NULL,
-                    correct INTEGER NOT NULL CHECK (correct IN (0, 1)),
+                    correct BOOLEAN NOT NULL,
                     misconception TEXT NULL,
                     difficulty_score INTEGER NOT NULL CHECK (difficulty_score BETWEEN 1 AND 5),
                     requested_difficulty INTEGER NOT NULL CHECK (requested_difficulty BETWEEN 1 AND 5),
@@ -249,7 +200,6 @@ class AnalyticsStore:
                     created_at TEXT NOT NULL,
                     confirmed_at TEXT NULL,
                     PRIMARY KEY (attempt_id, question_id),
-                    FOREIGN KEY (attempt_id) REFERENCES attempts(attempt_id) ON DELETE RESTRICT,
                     CHECK (
                         (status = 'confirmed' AND confirmed_at IS NOT NULL AND adaptive_level_after IS NOT NULL)
                         OR
@@ -261,12 +211,8 @@ class AnalyticsStore:
                     ON attempts(created_at, attempt_id);
                 CREATE INDEX IF NOT EXISTS idx_answers_status_order
                     ON answers(status, attempt_id, question_number, question_id);
-                PRAGMA user_version = 1;
                 """
             )
-            connection.commit()
-        finally:
-            connection.close()
 
     def create_attempt(
         self,
@@ -283,10 +229,9 @@ class AnalyticsStore:
         normalized_difficulty = _difficulty(initial_difficulty, "initial_difficulty")
         requested_created_at = _utc_iso(created_at) if created_at is not None else None
 
-        with self._write() as connection:
-            existing = connection.execute(
-                "SELECT * FROM attempts WHERE attempt_id = ?", (normalized_id,)
-            ).fetchone()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM attempts WHERE attempt_id = %s", (normalized_id,))
+            existing = cur.fetchone()
             if existing is not None:
                 record = _attempt_from_row(existing)
                 matches = (
@@ -302,32 +247,23 @@ class AnalyticsStore:
                 return record
 
             timestamp = requested_created_at or _utc_iso()
-            connection.execute(
+            cur.execute(
                 """
                 INSERT INTO attempts (
                     attempt_id, student_id, language, initial_difficulty,
                     status, created_at, completed_at, final_difficulty
-                ) VALUES (?, ?, ?, ?, 'in_progress', ?, NULL, NULL)
+                ) VALUES (%s, %s, %s, %s, 'in_progress', %s, NULL, NULL)
                 """,
-                (
-                    normalized_id,
-                    normalized_student,
-                    normalized_language,
-                    normalized_difficulty,
-                    timestamp,
-                ),
+                (normalized_id, normalized_student, normalized_language, normalized_difficulty, timestamp),
             )
-            row = connection.execute(
-                "SELECT * FROM attempts WHERE attempt_id = ?", (normalized_id,)
-            ).fetchone()
-            return _attempt_from_row(row)
+            cur.execute("SELECT * FROM attempts WHERE attempt_id = %s", (normalized_id,))
+            return _attempt_from_row(cur.fetchone())
 
     def get_attempt(self, attempt_id: str | UUID) -> AttemptRecord | None:
         normalized_id = _identifier(attempt_id, "attempt_id")
-        with self._read() as connection:
-            row = connection.execute(
-                "SELECT * FROM attempts WHERE attempt_id = ?", (normalized_id,)
-            ).fetchone()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM attempts WHERE attempt_id = %s", (normalized_id,))
+            row = cur.fetchone()
         return _attempt_from_row(row) if row is not None else None
 
     def mark_attempt_completed(
@@ -341,10 +277,9 @@ class AnalyticsStore:
         normalized_difficulty = _difficulty(final_difficulty, "final_difficulty")
         requested_completed_at = _utc_iso(completed_at) if completed_at is not None else None
 
-        with self._write() as connection:
-            row = connection.execute(
-                "SELECT * FROM attempts WHERE attempt_id = ?", (normalized_id,)
-            ).fetchone()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM attempts WHERE attempt_id = %s", (normalized_id,))
+            row = cur.fetchone()
             if row is None:
                 raise AnalyticsNotFoundError(f"Attempt {normalized_id!r} was not found.")
             existing = _attempt_from_row(row)
@@ -363,18 +298,16 @@ class AnalyticsStore:
                 return existing
 
             timestamp = requested_completed_at or _utc_iso()
-            connection.execute(
+            cur.execute(
                 """
                 UPDATE attempts
-                SET status = 'completed', completed_at = ?, final_difficulty = ?
-                WHERE attempt_id = ?
+                SET status = 'completed', completed_at = %s, final_difficulty = %s
+                WHERE attempt_id = %s
                 """,
                 (timestamp, normalized_difficulty, normalized_id),
             )
-            updated = connection.execute(
-                "SELECT * FROM attempts WHERE attempt_id = ?", (normalized_id,)
-            ).fetchone()
-            return _attempt_from_row(updated)
+            cur.execute("SELECT * FROM attempts WHERE attempt_id = %s", (normalized_id,))
+            return _attempt_from_row(cur.fetchone())
 
     def prepare_answer(
         self,
@@ -399,7 +332,7 @@ class AnalyticsStore:
     ) -> AnswerRecord:
         """Create a pending answer without ever replacing its payload.
 
-        An exact retry is a read-equivalent operation.  An exact retry of a
+        An exact retry is a read-equivalent operation. An exact retry of a
         failed row returns it to ``pending`` while preserving its original
         creation timestamp; callers must explicitly confirm it again.
         """
@@ -423,21 +356,21 @@ class AnalyticsStore:
         )
         requested_created_at = _utc_iso(created_at) if created_at is not None else None
 
-        with self._write() as connection:
-            attempt = connection.execute(
-                "SELECT language FROM attempts WHERE attempt_id = ?", (values["attempt_id"],)
-            ).fetchone()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT language FROM attempts WHERE attempt_id = %s", (values["attempt_id"],)
+            )
+            attempt = cur.fetchone()
             if attempt is None:
-                raise AnalyticsNotFoundError(
-                    f"Attempt {values['attempt_id']!r} was not found."
-                )
+                raise AnalyticsNotFoundError(f"Attempt {values['attempt_id']!r} was not found.")
             if attempt["language"] != values["language"]:
                 raise AnalyticsConflictError("Answer language does not match its attempt.")
 
-            existing_row = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (values["attempt_id"], values["question_id"]),
-            ).fetchone()
+            )
+            existing_row = cur.fetchone()
             if existing_row is not None:
                 existing = _answer_from_row(existing_row)
                 if not self._answer_payload_matches(existing, values, requested_created_at):
@@ -445,23 +378,23 @@ class AnalyticsStore:
                         "This question already has a different prepared answer."
                     )
                 if existing.status == "failed":
-                    connection.execute(
+                    cur.execute(
                         """
                         UPDATE answers
                         SET status = 'pending', confirmed_at = NULL
-                        WHERE attempt_id = ? AND question_id = ?
+                        WHERE attempt_id = %s AND question_id = %s
                         """,
                         (values["attempt_id"], values["question_id"]),
                     )
-                    refreshed = connection.execute(
-                        "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+                    cur.execute(
+                        "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                         (values["attempt_id"], values["question_id"]),
-                    ).fetchone()
-                    return _answer_from_row(refreshed)
+                    )
+                    return _answer_from_row(cur.fetchone())
                 return existing
 
             timestamp = requested_created_at or _utc_iso()
-            connection.execute(
+            cur.execute(
                 """
                 INSERT INTO answers (
                     attempt_id, question_id, question_number, language, topic,
@@ -469,23 +402,23 @@ class AnalyticsStore:
                     correct_answer_text, correct, misconception, difficulty_score,
                     requested_difficulty, adaptive_level_before, adaptive_level_after,
                     source_reference, status, created_at, confirmed_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NULL)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s, NULL)
                 """,
                 (
                     values["attempt_id"], values["question_id"], values["question_number"],
                     values["language"], values["topic"], values["question_text"],
                     values["selected_option_index"], values["selected_answer_text"],
-                    values["correct_answer_text"], int(values["correct"]),
+                    values["correct_answer_text"], bool(values["correct"]),
                     values["misconception"], values["difficulty_score"],
                     values["requested_difficulty"], values["adaptive_level_before"],
                     values["adaptive_level_after"], values["source_reference"], timestamp,
                 ),
             )
-            inserted = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (values["attempt_id"], values["question_id"]),
-            ).fetchone()
-            return _answer_from_row(inserted)
+            )
+            return _answer_from_row(cur.fetchone())
 
     @staticmethod
     def _validated_answer_values(**values: object) -> dict[str, object]:
@@ -558,16 +491,15 @@ class AnalyticsStore:
             requested_created_at is None or existing.created_at == requested_created_at
         )
 
-    def get_answer(
-        self, attempt_id: str | UUID, question_id: str
-    ) -> AnswerRecord | None:
+    def get_answer(self, attempt_id: str | UUID, question_id: str) -> AnswerRecord | None:
         normalized_attempt = _identifier(attempt_id, "attempt_id")
         normalized_question = _identifier(question_id, "question_id")
-        with self._read() as connection:
-            row = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (normalized_attempt, normalized_question),
-            ).fetchone()
+            )
+            row = cur.fetchone()
         return _answer_from_row(row) if row is not None else None
 
     def confirm_answer(
@@ -587,11 +519,12 @@ class AnalyticsStore:
             else None
         )
         requested_confirmed_at = _utc_iso(confirmed_at) if confirmed_at is not None else None
-        with self._write() as connection:
-            row = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (normalized_attempt, normalized_question),
-            ).fetchone()
+            )
+            row = cur.fetchone()
             if row is None:
                 raise AnalyticsNotFoundError("Prepared answer was not found.")
             existing = _answer_from_row(row)
@@ -600,9 +533,7 @@ class AnalyticsStore:
                     (requested_confirmed_at is not None and existing.confirmed_at != requested_confirmed_at)
                     or (normalized_after is not None and existing.adaptive_level_after != normalized_after)
                 ):
-                    raise AnalyticsConflictError(
-                        "Answer is already confirmed with other values."
-                    )
+                    raise AnalyticsConflictError("Answer is already confirmed with other values.")
                 return existing
             if existing.status == "failed":
                 raise AnalyticsConflictError(
@@ -614,9 +545,7 @@ class AnalyticsStore:
                 and normalized_after is not None
                 and existing.adaptive_level_after != normalized_after
             ):
-                raise AnalyticsConflictError(
-                    "Prepared answer has another post-answer adaptive level."
-                )
+                raise AnalyticsConflictError("Prepared answer has another post-answer adaptive level.")
 
             authoritative_after = normalized_after or existing.adaptive_level_after
             if authoritative_after is None:
@@ -624,31 +553,30 @@ class AnalyticsStore:
                     "adaptive_level_after is required when confirming this answer."
                 )
             timestamp = requested_confirmed_at or _utc_iso()
-            connection.execute(
+            cur.execute(
                 """
                 UPDATE answers
-                SET status = 'confirmed', confirmed_at = ?, adaptive_level_after = ?
-                WHERE attempt_id = ? AND question_id = ? AND status = 'pending'
+                SET status = 'confirmed', confirmed_at = %s, adaptive_level_after = %s
+                WHERE attempt_id = %s AND question_id = %s AND status = 'pending'
                 """,
                 (timestamp, authoritative_after, normalized_attempt, normalized_question),
             )
-            updated = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (normalized_attempt, normalized_question),
-            ).fetchone()
-            return _answer_from_row(updated)
+            )
+            return _answer_from_row(cur.fetchone())
 
-    def mark_answer_failed(
-        self, attempt_id: str | UUID, question_id: str
-    ) -> AnswerRecord:
+    def mark_answer_failed(self, attempt_id: str | UUID, question_id: str) -> AnswerRecord:
         """Move a pending answer to failed without downgrading confirmation."""
         normalized_attempt = _identifier(attempt_id, "attempt_id")
         normalized_question = _identifier(question_id, "question_id")
-        with self._write() as connection:
-            row = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (normalized_attempt, normalized_question),
-            ).fetchone()
+            )
+            row = cur.fetchone()
             if row is None:
                 raise AnalyticsNotFoundError("Prepared answer was not found.")
             existing = _answer_from_row(row)
@@ -656,18 +584,18 @@ class AnalyticsStore:
                 raise AnalyticsConflictError("A confirmed answer cannot become failed.")
             if existing.status == "failed":
                 return existing
-            connection.execute(
+            cur.execute(
                 """
                 UPDATE answers SET status = 'failed', confirmed_at = NULL
-                WHERE attempt_id = ? AND question_id = ? AND status = 'pending'
+                WHERE attempt_id = %s AND question_id = %s AND status = 'pending'
                 """,
                 (normalized_attempt, normalized_question),
             )
-            updated = connection.execute(
-                "SELECT * FROM answers WHERE attempt_id = ? AND question_id = ?",
+            cur.execute(
+                "SELECT * FROM answers WHERE attempt_id = %s AND question_id = %s",
                 (normalized_attempt, normalized_question),
-            ).fetchone()
-            return _answer_from_row(updated)
+            )
+            return _answer_from_row(cur.fetchone())
 
     def list_attempts(self, *, status: AttemptStatus | None = None) -> list[AttemptRecord]:
         if status is not None and status not in ("in_progress", "completed"):
@@ -675,46 +603,43 @@ class AnalyticsStore:
         sql = "SELECT * FROM attempts"
         parameters: tuple[str, ...] = ()
         if status is not None:
-            sql += " WHERE status = ?"
+            sql += " WHERE status = %s"
             parameters = (status,)
         sql += " ORDER BY created_at, attempt_id"
-        with self._read() as connection:
-            rows = connection.execute(sql, parameters).fetchall()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(sql, parameters)
+            rows = cur.fetchall()
         return [_attempt_from_row(row) for row in rows]
 
-    def list_confirmed_answers(
-        self, *, attempt_id: str | UUID | None = None
-    ) -> list[AnswerRecord]:
+    def list_confirmed_answers(self, *, attempt_id: str | UUID | None = None) -> list[AnswerRecord]:
         sql = "SELECT * FROM answers WHERE status = 'confirmed'"
         parameters: tuple[str, ...] = ()
         if attempt_id is not None:
-            sql += " AND attempt_id = ?"
+            sql += " AND attempt_id = %s"
             parameters = (_identifier(attempt_id, "attempt_id"),)
         sql += " ORDER BY attempt_id, question_number, question_id"
-        with self._read() as connection:
-            rows = connection.execute(sql, parameters).fetchall()
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(sql, parameters)
+            rows = cur.fetchall()
         return [_answer_from_row(row) for row in rows]
 
     def read_snapshot(self) -> AnalyticsSnapshot:
-        """Read attempts and confirmed answers from one SQLite snapshot.
-
-        The explicit read transaction ensures a concurrent answer confirmation
-        cannot appear in the answer set without its corresponding attempt view.
-        Pending and failed answers are excluded at the SQL boundary.
+        """Read attempts and confirmed answers in one transaction, so a
+        concurrent answer confirmation can't appear in the answer set
+        without its corresponding attempt view. Pending/failed answers
+        are excluded at the SQL boundary.
         """
-        with self._read() as connection:
-            connection.execute("BEGIN")
-            attempt_rows = connection.execute(
-                "SELECT * FROM attempts ORDER BY created_at, attempt_id"
-            ).fetchall()
-            answer_rows = connection.execute(
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM attempts ORDER BY created_at, attempt_id")
+            attempt_rows = cur.fetchall()
+            cur.execute(
                 """
                 SELECT * FROM answers
                 WHERE status = 'confirmed'
                 ORDER BY attempt_id, question_number, question_id
                 """
-            ).fetchall()
-            connection.commit()
+            )
+            answer_rows = cur.fetchall()
         return AnalyticsSnapshot(
             attempts=tuple(_attempt_from_row(row) for row in attempt_rows),
             confirmed_answers=tuple(_answer_from_row(row) for row in answer_rows),

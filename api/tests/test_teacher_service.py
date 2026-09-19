@@ -15,7 +15,6 @@ from api.teacher_service import TeacherService
 
 
 CREATED = datetime(2026, 2, 1, 10, 0, tzinfo=timezone.utc)
-TEST_TOKEN = "phase3-test-token"
 
 
 @pytest.fixture
@@ -292,62 +291,22 @@ def endpoint_client(store: AnalyticsStore) -> TestClient:
     )
 
 
-@pytest.mark.parametrize(
-    "authorization",
-    [None, "Basic credentials", "Bearer", "Bearer wrong-token", "Bearer a b"],
-)
-def test_live_endpoint_rejects_missing_malformed_and_wrong_auth(
-    store: AnalyticsStore,
-    monkeypatch,
-    authorization: str | None,
-):
-    monkeypatch.setenv("TEACHER_DASHBOARD_TOKEN", TEST_TOKEN)
-    headers = {"Authorization": authorization} if authorization else {}
-    response = endpoint_client(store).get("/api/teacher/live", headers=headers)
-    assert response.status_code == 401
-    assert response.json()["error"]["code"] == "TEACHER_AUTH_REQUIRED"
-    assert TEST_TOKEN not in response.text
-
-
-def test_live_endpoint_fails_closed_without_server_token(store: AnalyticsStore, monkeypatch):
-    monkeypatch.delenv("TEACHER_DASHBOARD_TOKEN", raising=False)
-    response = endpoint_client(store).get(
-        "/api/teacher/live",
-        headers={"Authorization": f"Bearer {TEST_TOKEN}"},
-    )
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "TEACHER_AUTH_NOT_CONFIGURED"
-    assert TEST_TOKEN not in response.text
-
-
-def test_authorized_empty_endpoint_is_live_and_read_only(store: AnalyticsStore, monkeypatch):
-    monkeypatch.setenv("TEACHER_DASHBOARD_TOKEN", TEST_TOKEN)
+def test_empty_endpoint_is_live_and_read_only(store: AnalyticsStore):
     before = store.read_snapshot()
-    response = endpoint_client(store).get(
-        "/api/teacher/live",
-        headers={"Authorization": f"Bearer {TEST_TOKEN}"},
-    )
+    response = endpoint_client(store).get("/api/teacher/live")
     after = store.read_snapshot()
     assert response.status_code == 200
     assert response.json()["data_source"] == "live"
     assert response.json()["data_status"] == "empty"
     assert before == after
-    assert TEST_TOKEN not in response.text
 
 
-def test_authorized_endpoint_uses_durable_rows_without_active_attempts(
-    store: AnalyticsStore,
-    monkeypatch,
-):
+def test_endpoint_uses_durable_rows_without_active_attempts(store: AnalyticsStore):
     seed_live_data(store)
     reopened = AnalyticsStore(store.db_path)
     reopened.initialize()
-    monkeypatch.setenv("TEACHER_DASHBOARD_TOKEN", TEST_TOKEN)
     client = endpoint_client(reopened)
-    response = client.get(
-        "/api/teacher/live",
-        headers={"Authorization": f"Bearer {TEST_TOKEN}"},
-    )
+    response = client.get("/api/teacher/live")
     assert response.status_code == 200
     payload = response.json()
     serialized = json.dumps(payload, ensure_ascii=False)
@@ -357,16 +316,11 @@ def test_authorized_endpoint_uses_durable_rows_without_active_attempts(
     assert "HIDDEN_SELECTED" not in serialized
     assert "HIDDEN_CORRECT" not in serialized
     assert "backend_student_key" not in serialized
-    assert TEST_TOKEN not in serialized
 
 
-def test_demo_endpoint_remains_independent_of_empty_live_data(store: AnalyticsStore, monkeypatch):
-    monkeypatch.setenv("TEACHER_DASHBOARD_TOKEN", TEST_TOKEN)
+def test_demo_endpoint_remains_independent_of_empty_live_data(store: AnalyticsStore):
     client = endpoint_client(store)
-    live = client.get(
-        "/api/teacher/live",
-        headers={"Authorization": f"Bearer {TEST_TOKEN}"},
-    )
+    live = client.get("/api/teacher/live")
     demo = client.get("/api/demo/teacher")
     assert live.status_code == demo.status_code == 200
     assert live.json()["data_source"] == "live"

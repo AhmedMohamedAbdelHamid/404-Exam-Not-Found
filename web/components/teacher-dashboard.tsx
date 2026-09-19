@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { BarChart3, Database, LogOut } from "lucide-react";
+import { BarChart3, Database } from "lucide-react";
 import type { Language, TeacherLive } from "@/lib/api";
 import { MetricCard } from "@/components/ui";
 import { MixedText } from "@/components/mixed-text";
@@ -46,27 +46,27 @@ function RankedBars({ items, label }: { items: RankedItem[]; label: string }) {
   );
 }
 
-function TeacherHeader({ onLogout }: { onLogout: () => void }) {
+function TeacherHeader() {
   return (
     <header className="teacher-heading">
       <div><div className="eyebrow">TEACHER WORKSPACE</div><h1 className="mt-3 text-4xl font-semibold tracking-[-.055em] text-white">Class intelligence</h1><p className="mt-2 text-sm text-zinc-400">Durable assessment signals for informed instruction.</p></div>
-      <div className="flex flex-wrap items-center gap-2"><span className="live-badge"><i aria-hidden /> LIVE CLASS DATA</span><button type="button" className="secondary-button" onClick={onLogout}><LogOut size={14} aria-hidden /> Log out</button></div>
+      <div className="flex flex-wrap items-center gap-2"><span className="live-badge"><i aria-hidden /> LIVE CLASS DATA</span></div>
     </header>
   );
 }
 
-function EmptyDashboard({ onLogout }: { onLogout: () => void }) {
+function EmptyDashboard() {
   return (
     <div className="space-y-6">
-      <TeacherHeader onLogout={onLogout} />
+      <TeacherHeader />
       <section className="teacher-empty premium-panel" aria-labelledby="teacher-empty-title"><span className="teacher-empty-icon" aria-hidden><Database size={24} /></span><div><p className="eyebrow">LIVE CONNECTION READY</p><h2 id="teacher-empty-title">Your class analytics will appear here.</h2><p>This dashboard is connected to durable assessment data. There are no persisted student attempts yet; metrics will populate as students begin and complete assessments.</p></div></section>
     </div>
   );
 }
 
-export function TeacherDashboard({ data, onLogout }: { data: TeacherLive; onLogout: () => void }) {
+export function TeacherDashboard({ data }: { data: TeacherLive }) {
   const reduced = useReducedMotion();
-  if (data.data_status === "empty") return <EmptyDashboard onLogout={onLogout} />;
+  if (data.data_status === "empty") return <EmptyDashboard />;
   const { summary } = data;
   const metrics = [
     ["Students", String(summary.total_students), `${summary.total_attempts} total attempts`],
@@ -85,7 +85,7 @@ export function TeacherDashboard({ data, onLogout }: { data: TeacherLive; onLogo
 
   return (
     <div className="space-y-6">
-      <TeacherHeader onLogout={onLogout} />
+      <TeacherHeader />
       <div className="teacher-kpis grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">{metrics.map(([label, value, note], index) => <MetricCard key={label} label={label} value={value} note={note} index={index} />)}</div>
       <div className="grid min-w-0 gap-6 xl:grid-cols-2">
         <motion.section initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.card }} className="premium-panel min-w-0 p-5 sm:p-6" aria-labelledby="class-performance-title"><div id="class-performance-title"><ChartHeader title="Completed-attempt performance" subtitle="Completed attempts by score band" /></div><div className="mt-5 h-64" role="img" aria-label="Completed attempts by score band"><ResponsiveContainer width="100%" height="100%"><BarChart data={scores} margin={{ left: -20, right: 8, bottom: 8 }}><CartesianGrid stroke="rgba(255,255,255,.055)" vertical={false} /><XAxis dataKey="band" tick={{ fill: "#a1a1aa", fontSize: 10 }} axisLine={false} tickLine={false} interval={0} /><YAxis allowDecimals={false} tick={{ fill: "#71717a", fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: "rgba(255,255,255,.025)" }} contentStyle={{ background: "#121216", border: "1px solid rgba(255,255,255,.1)", borderRadius: 12, boxShadow: "0 16px 40px rgba(0,0,0,.35)", fontSize: 12 }} formatter={(value) => [value, "Attempts"]} /><Bar dataKey="attempts" fill="#ff3045" radius={[5, 5, 1, 1]} animationDuration={reduced ? 0 : 420} isAnimationActive={!reduced} /></BarChart></ResponsiveContainer></div></motion.section>

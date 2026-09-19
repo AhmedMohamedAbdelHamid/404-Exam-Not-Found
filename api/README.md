@@ -1,42 +1,49 @@
-# Exam Not Found — Premium web application
+# Exam Not Found — FastAPI bridge
 
-The Next.js App Router client provides the student assessment, results report, and protected live Teacher Dashboard. Student assessment requests go to FastAPI; teacher requests pass through authenticated same-origin Next.js server routes.
+The API consumes the existing retrieval, generation, validation, fallback, and staircase contracts. It adds safe HTTP DTOs, server-side option randomization, idempotent answer handling, durable analytics, and protected teacher aggregation.
 
-## Install and configure
+## Install
+
+Create and activate the root virtual environment, then install **both** dependency files from the repository root:
 
 ```powershell
-cd web
-npm ci
-Copy-Item .env.example .env.local
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -r api\requirements.txt
 ```
 
-`web/.env.local` needs one variable:
-
-- `NEXT_PUBLIC_API_BASE_URL`: the URL of the FastAPI backend (the browser calls it directly).
-
-Never commit `.env.local`.
+The root requirements provide generation/RAG and legacy dependencies imported by the API. The API requirements provide FastAPI, Uvicorn, and test dependencies. Installing only `api/requirements.txt` is insufficient.
 
 ## Run
 
-Start FastAPI on port 8000 first, then:
-
 ```powershell
-npm run dev
+.\.venv\Scripts\python.exe -m uvicorn api.main:app --reload --port 8000
 ```
 
-- Student application: <http://localhost:3000/>
-- Teacher Dashboard: <http://localhost:3000/teacher>
+The API exposes health, attempt creation/state, next-question, answer submission, results, the explicit demo teacher endpoint, and the live teacher endpoint (no authentication). Interactive documentation is available at `/api/docs`.
 
-The teacher dashboard has no login: `/teacher` loads `GET /api/teacher/live` from the FastAPI backend directly, so anyone with the URL can view it.
+## Configuration
 
-## Quality and production commands
+Python/FastAPI values are documented in the root `.env.example`:
+
+- `GEMINI_API_KEY`: optional for fallback-only operation; required for live Gemini generation.
+- `ASSESSMENT_ANALYTICS_DB_PATH`: optional durable analytics path; defaults to `assessment_analytics.db`.
+- `LIVE_GENERATION_COOLDOWN_SECONDS`: provider cooldown after structured transient failures; defaults to 120 seconds.
+
+CORS is open to any origin, and `GET /api/teacher/live` requires no token.
+
+## Runtime behavior and persistence
+
+Live generation uses the existing Chroma/Gemini pipeline when its dependencies are configured. Known operational generation failures fall back to the verified question pool; failures do not advance the staircase.
+
+Adaptive state persists in `student_state.db`. Confirmed attempt analytics persist separately in `assessment_analytics.db`, including after API restart. The in-memory `AttemptStore` is intentionally process-local: active questions, frozen option mappings, response caches, locks, and ChunkSampler history are not restored after restart.
+
+## Tests
+
+The API tests inject generation behavior and do not call Gemini:
 
 ```powershell
-npm test -- --run
-npm run typecheck
-npm run lint
-npm run build
-npm run start
+.\.venv\Scripts\python.exe -m pytest api\tests -q
 ```
-
-Stop `npm run dev` before running a production build because both commands use the `.next` output directory. Production secrets must be supplied securely by the deployment environment.

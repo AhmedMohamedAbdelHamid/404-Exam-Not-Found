@@ -186,36 +186,6 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   return schema.parse(payload);
 }
 
-const errorEnvelopeSchema = z.object({
-  error: z.object({ code: z.string(), message: z.string(), retryable: z.boolean() }),
-});
-
-async function teacherRequest<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(path, {
-      ...init,
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", ...init?.headers },
-    });
-  } catch {
-    throw new ApiError("TEACHER_NETWORK_UNAVAILABLE", "The teacher workspace is unavailable. Please retry.", true, 0);
-  }
-  const payload: unknown = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const parsed = errorEnvelopeSchema.safeParse(payload);
-    if (parsed.success) {
-      throw new ApiError(parsed.data.error.code, parsed.data.error.message, parsed.data.error.retryable, response.status);
-    }
-    throw new ApiError("TEACHER_REQUEST_FAILED", "The teacher workspace is unavailable. Please retry.", response.status >= 500, response.status);
-  }
-  const parsed = schema.safeParse(payload);
-  if (!parsed.success) {
-    throw new ApiError("TEACHER_RESPONSE_INVALID", "The teacher workspace returned an invalid response.", true, 502);
-  }
-  return parsed.data;
-}
-
 export const api = {
   getHealth: () => request("/api/health", healthSchema),
   startAttempt: (studentId: string, language: Language) => request("/api/attempts", attemptSchema, {
@@ -232,15 +202,5 @@ export const api = {
 };
 
 export const teacherApi = {
-  unlock: (credential: string) => teacherRequest(
-    "/api/teacher/session",
-    z.object({ authenticated: z.literal(true) }).strict(),
-    { method: "POST", body: JSON.stringify({ credential }) },
-  ),
-  logout: () => teacherRequest(
-    "/api/teacher/session",
-    z.object({ authenticated: z.literal(false) }).strict(),
-    { method: "DELETE" },
-  ),
-  getLive: () => teacherRequest("/api/teacher/live", teacherLiveSchema),
+  getLive: () => request("/api/teacher/live", teacherLiveSchema),
 };

@@ -10,14 +10,11 @@ npm ci
 Copy-Item .env.example .env.local
 ```
 
-`web/.env.local` supports both browser-exposed and server-only Next.js configuration:
+`web/.env.local` needs one variable:
 
-- Browser-exposed: `NEXT_PUBLIC_API_BASE_URL`
-- Server-only: `API_INTERNAL_BASE_URL`
-- Server-only: `TEACHER_DASHBOARD_TOKEN`
-- Server-only: `TEACHER_UI_ACCESS_TOKEN`
+- `NEXT_PUBLIC_API_BASE_URL`: the URL of the FastAPI backend (the browser calls it directly).
 
-Only variables prefixed with `NEXT_PUBLIC_` enter the browser bundle. The teacher variables must never use that prefix. `TEACHER_DASHBOARD_TOKEN` must match the token configured for FastAPI; `TEACHER_UI_ACCESS_TOKEN` is a separate credential for the teacher access screen. Never commit `.env.local`.
+Never commit `.env.local`.
 
 ## Run
 
@@ -30,7 +27,7 @@ npm run dev
 - Student application: <http://localhost:3000/>
 - Teacher Dashboard: <http://localhost:3000/teacher>
 
-The teacher credential is validated by `POST /api/teacher/session`, which sets a signed HttpOnly session cookie. Authenticated browser requests use the Next.js `GET /api/teacher/live` proxy; only that server route attaches the FastAPI Bearer token.
+The teacher dashboard has no login: `/teacher` loads `GET /api/teacher/live` from the FastAPI backend directly, so anyone with the URL can view it.
 
 ## Quality and production commands
 

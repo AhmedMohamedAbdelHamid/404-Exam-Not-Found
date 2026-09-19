@@ -12,7 +12,7 @@ vi.mock("recharts", () => ({
 
 describe("TeacherDashboard", () => {
   it("renders durable live metrics without a demo label", () => {
-    render(<TeacherDashboard data={liveTeacherData} onLogout={vi.fn()} />);
+    render(<TeacherDashboard data={liveTeacherData} />);
     expect(screen.getByText("LIVE CLASS DATA")).toBeInTheDocument();
     expect(screen.queryByText(/DEMO CLASS DATA/i)).not.toBeInTheDocument();
     expect(screen.getByText("57.1%")).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe("TeacherDashboard", () => {
   });
 
   it("renders Arabic values, all difficulty levels, and separate attempt rows", () => {
-    render(<TeacherDashboard data={liveTeacherData} onLogout={vi.fn()} />);
+    render(<TeacherDashboard data={liveTeacherData} />);
     expect(screen.getAllByText("طالب ١").length).toBeGreaterThan(0);
     expect(screen.getAllByText("الحلقات").length).toBeGreaterThan(0);
     expect(screen.getAllByText("يخلط بين قيمة المتغير والنص").length).toBeGreaterThan(0);
@@ -41,7 +41,7 @@ describe("TeacherDashboard", () => {
       score_distribution: liveTeacherData.score_distribution.map((row) => ({ ...row, attempts: 0 })),
       difficulty: liveTeacherData.difficulty.map((row) => ({ ...row, count: 0 })),
     };
-    render(<TeacherDashboard data={empty} onLogout={vi.fn()} />);
+    render(<TeacherDashboard data={empty} />);
     expect(screen.getByText("Your class analytics will appear here.")).toBeInTheDocument();
     expect(screen.getByText(/no persisted student attempts yet/i)).toBeInTheDocument();
     expect(screen.queryByText("Overall accuracy")).not.toBeInTheDocument();

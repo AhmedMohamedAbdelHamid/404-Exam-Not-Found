@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import os
+import sys
+
+# Vercel does not put api/ on sys.path, so sibling modules
+# (assessment_service, models, ...) must be made importable explicitly.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from contextlib import asynccontextmanager
 import hmac
 import logging
-import os
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, Request

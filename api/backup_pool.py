@@ -57,6 +57,8 @@ docstring for the exact cutoff and why.
 Run standalone: python3 backup_pool.py
 """
 
+import random
+
 from schema import QuestionOut, QuestionOption, DifficultySubScores, LanguageEnum, ChunkTypeEnum
 
 # --------------------------------------------------------------------
@@ -501,26 +503,55 @@ _add(
 
 
 # --------------------------------------------------------------------
+# Extra questions (3 more per topic per language) -- see the module docstring
+# of backup_pool_extra.py for why. Registered through the same _add() so the
+# same import-time validation applies.
+# --------------------------------------------------------------------
+from backup_pool_extra import register as _register_extra  # noqa: E402
+
+_register_extra(_add)
+
+
+# --------------------------------------------------------------------
 # Public retrieval function -- this is what get_next_question.py's
 # GenerationUnavailable handler (once wired up) should call.
 # --------------------------------------------------------------------
 
-def _select_by_difficulty(candidates: list[QuestionOut], difficulty: int) -> QuestionOut:
-    """With only 2 pre-written tiers per topic (easy/hard), map the
-    requested 1-5 difficulty onto one of them: difficulty >= 3 gets
-    the harder question, difficulty < 3 gets the easier one. Crude,
-    but honest about the pool's real size -- a student's exam won't
-    get a mismatched-difficulty backup question silently, it gets the
-    closer of the two available, on a documented, simple rule.
-    Candidates are stored [easy, hard] by _add()'s append order.
+# How many of the closest-difficulty questions are eligible. Picking uniformly
+# among them (rather than always the single closest) is what makes two quizzes
+# at the same adaptive level differ from each other.
+_ELIGIBLE_NEAREST = 3
+
+
+def _select_by_difficulty(
+    candidates: list[QuestionOut],
+    difficulty: int,
+    rng: random.Random | random.SystemRandom | None = None,
+) -> QuestionOut:
+    """Pick a question near the requested 1-5 difficulty, at random.
+
+    The original rule (difficulty >= 3 -> "the hard one", otherwise "the easy
+    one") had only two questions per topic to choose from, so a fallback quiz
+    was fully determined by the student's difficulty and every quiz looked the
+    same. Now: rank questions by |question difficulty - requested| (ties
+    broken randomly) and choose uniformly among the nearest few.
     """
+    rng = rng or random.SystemRandom()
     if len(candidates) == 1:
         return candidates[0]
-    easy, hard = candidates[0], candidates[1]
-    return hard if difficulty >= 3 else easy
+    ranked = sorted(
+        candidates,
+        key=lambda q: (abs((q.difficulty_score or 3) - difficulty), rng.random()),
+    )
+    return rng.choice(ranked[:_ELIGIBLE_NEAREST])
 
 
-def get_backup_question(topic: str, language: str, difficulty: int = 3) -> QuestionOut | None:
+def get_backup_question(
+    topic: str,
+    language: str,
+    difficulty: int = 3,
+    rng: random.Random | random.SystemRandom | None = None,
+) -> QuestionOut | None:
     """Retrieve one backup question for this topic/language, or None
     if the pool has nothing for this (topic, language) pair -- caller
     should treat None as a genuine "nothing we can do" case (e.g. skip
@@ -530,21 +561,21 @@ def get_backup_question(topic: str, language: str, difficulty: int = 3) -> Quest
     Each call returns a fresh copy (Pydantic's .model_copy()) so
     callers can freely mutate the result (e.g. shuffle option order
     for anti-cheat) without affecting the shared pool for other
-    students.
+    students. `rng` is injectable so tests can be deterministic.
     """
     candidates = _POOL.get((topic, language))
     if not candidates:
         return None
-    chosen = _select_by_difficulty(candidates, difficulty)
+    chosen = _select_by_difficulty(candidates, difficulty, rng)
     return chosen.model_copy(deep=True)
 
 
 def pool_coverage() -> dict[str, int]:
     """How many backup questions exist per (topic, language) --
     useful for a quick completeness check without printing every
-    question. Real, current counts: 2 per topic per language (20
-    total) -- see module docstring for why this is smaller than the
-    roadmap's 15-20/topic target, and how to extend it."""
+    question. Real, current counts: 5 per topic per language (50
+    total) -- see module docstring; still smaller than the roadmap's
+    15-20/topic target, and easy to extend via backup_pool_extra.py."""
     return {f"{topic} ({language})": len(qs) for (topic, language), qs in _POOL.items()}
 
 

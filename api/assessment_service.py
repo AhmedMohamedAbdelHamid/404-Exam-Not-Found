@@ -23,6 +23,7 @@ from analytics_store import (
     AnalyticsConflictError,
     AnalyticsStore,
 )
+from db import StorageNotConfiguredError
 from attempt_store import AttemptContext, AttemptStore, StoredQuestion
 from models import (
     AnswerResponse,
@@ -134,6 +135,9 @@ class AssessmentService:
     def _require_analytics(self) -> None:
         try:
             self.initialize_analytics()
+        except StorageNotConfiguredError as exc:
+            LOGGER.error("Storage not configured: %s", exc)
+            raise ServiceError(503, "STORAGE_NOT_CONFIGURED", str(exc)) from None
         except Exception as exc:
             self._log_analytics_failure("initialization", exc)
             raise ServiceError(
@@ -437,6 +441,16 @@ class AssessmentService:
                 and attempt.runtime.gemini_configured
                 and attempt.chunk_sampler is not None
             )
+            live_skip_reason: str | None = None
+            if not live_dependencies_configured:
+                live_skip_reason = (
+                    f"live generation not configured (chunks_present={attempt.runtime.chroma_configured}, "
+                    f"language_chunks={attempt.runtime.collection_available}, "
+                    f"gemini_key={attempt.runtime.gemini_configured}, "
+                    f"sampler={attempt.chunk_sampler is not None})"
+                )
+            elif self._live_on_cooldown():
+                live_skip_reason = "live generation is on cooldown after transient provider errors"
             if live_dependencies_configured and not self._live_on_cooldown():
                 staircase = None
                 try:
@@ -451,6 +465,7 @@ class AssessmentService:
                     live_completed = question is None
                 except (GenerationUnavailable, LLMCallError) as exc:
                     live_failed = True
+                    live_skip_reason = f"{type(exc).__name__}: {str(exc)[:300]}"
                     if isinstance(exc, LLMCallError):
                         self._note_llm_failure(exc)
                         attempt.runtime = self.runtime_inspector.for_language(attempt.language)
@@ -458,6 +473,7 @@ class AssessmentService:
                     if not self._known_generation_error(exc):
                         raise
                     live_failed = True
+                    live_skip_reason = f"{type(exc).__name__}: {str(exc)[:300]}"
                 finally:
                     if staircase is not None:
                         _safe_close(staircase)
@@ -473,6 +489,15 @@ class AssessmentService:
 
             if question is None:
                 source = "fallback"
+                # Visible in Vercel -> Logs. Every fallback question means the AI
+                # pipeline was NOT used, so say why instead of degrading silently.
+                LOGGER.warning(
+                    "Serving verified fallback question (topic=%s, language=%s, difficulty=%s): %s",
+                    topic,
+                    attempt.language,
+                    difficulty,
+                    live_skip_reason or "unknown reason",
+                )
                 if live_failed:
                     # Reconcile with the current SQLite truth after the failed live call.
                     state, topic, difficulty = self._current_generation_state(attempt)

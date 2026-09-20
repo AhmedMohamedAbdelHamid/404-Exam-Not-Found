@@ -16,7 +16,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+import diagnostics
 from assessment_service import AssessmentService, ServiceError
+from db import StorageNotConfiguredError
 from demo_service import teacher_demo
 from models import (
     AnswerResponse,
@@ -86,6 +88,14 @@ def create_app(
         )
         return JSONResponse(status_code=exc.status_code, content=payload.model_dump())
 
+    @application.exception_handler(StorageNotConfiguredError)
+    async def storage_not_configured_handler(_: Request, exc: StorageNotConfiguredError) -> JSONResponse:
+        LOGGER.error("Storage not configured: %s", exc)
+        payload = ErrorEnvelope(
+            error=ErrorDetail(code="STORAGE_NOT_CONFIGURED", message=str(exc), retryable=False)
+        )
+        return JSONResponse(status_code=503, content=payload.model_dump())
+
     @application.exception_handler(RequestValidationError)
     async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
         del exc
@@ -116,6 +126,12 @@ def create_app(
     @application.get("/api/health", response_model=HealthResponse)
     def health(request: Request) -> HealthResponse:
         return current_service(request).runtime_inspector.health()
+
+    @application.get("/api/diagnostics")
+    def deployment_diagnostics(probe: bool = False) -> dict:
+        """Storage/Gemini configuration report. ``?probe=1`` also dry-runs the
+        real question pipeline once (2 Gemini calls, rate limited). No secrets."""
+        return diagnostics.collect(probe=probe)
 
     @application.post("/api/attempts", response_model=AttemptResponse, status_code=201)
     def start_attempt(payload: StartAttemptRequest, request: Request) -> AttemptResponse:

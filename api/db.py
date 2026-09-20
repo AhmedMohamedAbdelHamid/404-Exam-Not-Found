@@ -9,12 +9,17 @@ Two storage modes, chosen by the DATABASE_URL environment variable:
   (Project Settings -> Database -> Connection string).
 
 * Local SQLite fallback -- DATABASE_URL is missing or is not a Postgres URL.
-  State is kept in a SQLite file (default: the OS temp dir, which is the
-  only writable place on Vercel) and the RAG chunks are loaded from the
-  chunks_en.json / chunks_ar.json files bundled next to this module. This
-  lets the app run on Vercel before Supabase is wired up. It is *not*
-  durable and is not shared between function instances -- each warm
-  instance has its own copy -- so treat it as a demo/dev mode only.
+  State is kept in a SQLite file and the RAG chunks are loaded from the
+  chunks_en.json / chunks_ar.json files bundled next to this module. It is
+  *not* durable and is *not* shared between processes/function instances,
+  so it is for local development only.
+
+  On Vercel this fallback is REFUSED (see StorageNotConfiguredError). Every
+  serverless instance has its own private /tmp, so an attempt created on one
+  instance simply does not exist on the next one -- which showed up as
+  "This assessment attempt was not found" partway through a quiz. Failing
+  loudly with a clear message is better than silently losing state. Set
+  ALLOW_EPHEMERAL_STORAGE=1 to override (demo use only).
 
 Callers use the same interface in both modes:
 
@@ -34,6 +39,7 @@ import re
 import sqlite3
 import tempfile
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -47,24 +53,52 @@ _MODULE_DIR = Path(__file__).resolve().parent
 _CHUNK_FILES = ("chunks_en.json", "chunks_ar.json")
 
 
+class StorageNotConfiguredError(RuntimeError):
+    """Raised instead of silently falling back to per-instance SQLite on Vercel."""
+
+
 def _database_url() -> str:
-    return (os.getenv(DATABASE_URL_ENV) or "").strip()
+    # Tolerate quotes pasted around the value in a dashboard / .env file.
+    return (os.getenv(DATABASE_URL_ENV) or "").strip().strip("\"'").strip()
+
+
+def _running_on_vercel() -> bool:
+    return bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+
+
+def _ephemeral_storage_allowed() -> bool:
+    return (os.getenv("ALLOW_EPHEMERAL_STORAGE") or "").strip().lower() in {"1", "true", "yes"}
+
+
+def database_url_problem() -> str | None:
+    """Human-readable reason DATABASE_URL is unusable, or None if it is fine."""
+    url = _database_url()
+    if not url:
+        return "DATABASE_URL is not set."
+    if url.startswith(("postgresql://", "postgres://")):
+        return None
+    if url.startswith(("http://", "https://")):
+        return (
+            "DATABASE_URL is an https:// project URL (e.g. https://<ref>.supabase.co). "
+            "It must be the Postgres connection string from Supabase -> Project Settings "
+            "-> Database -> Connection string (URI), starting with postgresql://"
+        )
+    return "DATABASE_URL must start with postgresql:// (or postgres://)."
 
 
 def uses_postgres() -> bool:
     """True only when DATABASE_URL is a usable Postgres connection string."""
-    url = _database_url()
-    if not url:
-        return False
-    if url.startswith(("postgresql://", "postgres://")):
+    problem = database_url_problem()
+    if problem is None:
         return True
-    if not _warned_invalid_url.is_set():
+    if _database_url() and not _warned_invalid_url.is_set():
         _warned_invalid_url.set()
-        LOGGER.warning(
-            "DATABASE_URL is set but is not a postgresql:// connection string "
-            "(a Supabase project URL such as https://<ref>.supabase.co will not "
-            "work). Falling back to the local SQLite store. Use the Session "
-            "pooler URI from Supabase -> Project Settings -> Database."
+        LOGGER.error(
+            "%s %s",
+            problem,
+            "Refusing to use per-instance SQLite on Vercel."
+            if _running_on_vercel() and not _ephemeral_storage_allowed()
+            else "Falling back to local SQLite (dev only).",
         )
     return False
 
@@ -76,12 +110,107 @@ _warned_invalid_url = threading.Event()
 # Postgres mode
 # --------------------------------------------------------------------------
 
-@contextmanager
-def _postgres_connection() -> Iterator[Any]:
+_MIGRATIONS_DIR = _MODULE_DIR / "migrations"
+_postgres_lock = threading.Lock()
+_postgres_ready = False
+_postgres_last_attempt = 0.0
+_BOOTSTRAP_RETRY_SECONDS = 30.0
+_BOOTSTRAP_ADVISORY_LOCK = 4_040_404
+
+
+def _raw_postgres_connect() -> Any:
     import psycopg
     from psycopg.rows import dict_row
 
-    conn = psycopg.connect(_database_url(), row_factory=dict_row)
+    # prepare_threshold=None: server-side prepared statements break behind
+    # Supabase's transaction pooler (port 6543); disabling them works for both
+    # the session and the transaction pooler. Every request here opens short
+    # connections, so prepared statements would never pay off anyway.
+    return psycopg.connect(
+        _database_url(),
+        row_factory=dict_row,
+        prepare_threshold=None,
+        connect_timeout=10,
+    )
+
+
+def _bootstrap_postgres() -> None:
+    """Idempotently create tables and load textbook chunks.
+
+    Runs once per function instance. Without it a fresh Supabase project has no
+    ``student_state`` / ``attempt_contexts`` / ``chunks`` tables, and an empty
+    ``chunks`` table silently disables live question generation (the app then
+    serves the small verified fallback pool for every quiz).
+    """
+    conn = _raw_postgres_connect()
+    try:
+        with conn.cursor() as cur:
+            # Serialise concurrent cold starts so CREATE TABLE IF NOT EXISTS
+            # does not race with itself.
+            cur.execute("SELECT pg_advisory_xact_lock(%s)", (_BOOTSTRAP_ADVISORY_LOCK,))
+            for migration in sorted(_MIGRATIONS_DIR.glob("*.sql")):
+                cur.execute(migration.read_text(encoding="utf-8"))
+            cur.execute("SELECT COUNT(*) AS n FROM chunks")
+            if cur.fetchone()["n"] == 0:
+                rows = []
+                for name in _CHUNK_FILES:
+                    path = _MODULE_DIR / name
+                    if not path.exists():
+                        LOGGER.warning("Chunk file %s not found; live generation disabled.", name)
+                        continue
+                    for chunk in json.loads(path.read_text(encoding="utf-8")):
+                        rows.append(
+                            (
+                                chunk["chunk_id"],
+                                chunk["topic"],
+                                chunk["language"],
+                                chunk.get("chunk_type"),
+                                chunk["text"],
+                                list(chunk.get("source_pages") or []),
+                            )
+                        )
+                cur.executemany(
+                    "INSERT INTO chunks (chunk_id, topic, language, chunk_type, text, source_pages) "
+                    "VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (chunk_id) DO NOTHING",
+                    rows,
+                )
+                LOGGER.info("Seeded %d textbook chunks into Postgres.", len(rows))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def _ensure_postgres_ready() -> None:
+    global _postgres_ready, _postgres_last_attempt
+    if _postgres_ready:
+        return
+    with _postgres_lock:
+        if _postgres_ready:
+            return
+        if time.monotonic() - _postgres_last_attempt < _BOOTSTRAP_RETRY_SECONDS and _postgres_last_attempt:
+            return  # a recent bootstrap failed; don't hammer the database on every query
+        _postgres_last_attempt = time.monotonic()
+        try:
+            _bootstrap_postgres()
+        except Exception as exc:  # noqa: BLE001 -- never block requests on bootstrap
+            LOGGER.error(
+                "Postgres bootstrap failed (%s.%s: %s). Run api/migrations/*.sql and "
+                "api/seed_chunks.py manually if this persists.",
+                type(exc).__module__,
+                type(exc).__name__,
+                str(exc)[:200],
+            )
+            return
+        _postgres_ready = True
+
+
+@contextmanager
+def _postgres_connection() -> Iterator[Any]:
+    _ensure_postgres_ready()
+    conn = _raw_postgres_connect()
     try:
         yield conn
         conn.commit()
@@ -304,9 +433,15 @@ def connection() -> Iterator[Any]:
     if uses_postgres():
         with _postgres_connection() as conn:
             yield conn
-    else:
-        with _sqlite_connection() as conn:
-            yield conn
+        return
+    if _running_on_vercel() and not _ephemeral_storage_allowed():
+        raise StorageNotConfiguredError(
+            "The server's database is not configured. "
+            + (database_url_problem() or "")
+            + " Set DATABASE_URL in the Vercel project settings and redeploy."
+        )
+    with _sqlite_connection() as conn:
+        yield conn
 
 
 def json_param(payload: Any) -> Any:
@@ -327,3 +462,28 @@ def json_value(value: Any) -> Any:
 
 def storage_mode() -> str:
     return "postgres" if uses_postgres() else "sqlite"
+
+
+def storage_status() -> dict[str, Any]:
+    """Non-secret storage diagnostics for /api/diagnostics."""
+    mode = storage_mode()
+    status: dict[str, Any] = {
+        "mode": mode,
+        "durable": mode == "postgres",
+        "on_vercel": _running_on_vercel(),
+        "config_problem": database_url_problem(),
+        "reachable": False,
+        "error": None,
+        "chunks": {},
+    }
+    if mode != "postgres" and _running_on_vercel() and not _ephemeral_storage_allowed():
+        status["error"] = "StorageNotConfiguredError"
+        return status
+    try:
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT language, COUNT(*) AS n FROM chunks GROUP BY language")
+            status["chunks"] = {row["language"]: int(row["n"]) for row in cur.fetchall()}
+        status["reachable"] = True
+    except Exception as exc:  # noqa: BLE001
+        status["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+    return status

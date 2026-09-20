@@ -2,14 +2,16 @@
 llm_client.py — real LLM integration (replaces the call_llm stand-ins
 in generate.py / generation_agent.py / validation_stage2.py).
 
-Uses Gemini 3.6 Flash by default: reliable JSON-schema-constrained
-structured output, which is all this task needs (grounded MCQ
-generation isn't a reasoning-heavy task that benefits from a pricier
-model). Note: gemini-2.5-flash was the original pick here but Google
-retired it for new API keys (confirmed by a live 404 error naming
-gemini-3.6-flash as the replacement) -- if this breaks again later,
-check which Flash model is currently live and update GEMINI_MODEL
-below or via the env var, same fix either way.
+Uses Gemini 3.5 Flash-Lite by default: reliable JSON-schema-constrained
+structured output at the lowest cost/latency in the Gemini 3.5 line,
+which is all this task needs (grounded MCQ generation isn't a
+reasoning-heavy task that benefits from a pricier model). History:
+gemini-2.5-flash was the original pick but Google retired it for new
+API keys (confirmed by a live 404 error naming gemini-3.6-flash as the
+replacement); gemini-3.6-flash was used next, then swapped for
+gemini-3.5-flash-lite for cost. If this breaks again later, check
+which Flash model is currently live and update GEMINI_MODEL below or
+via the env var, same fix either way.
 Override with the GEMINI_MODEL env var if the team wants a different
 Flash variant -- no code change needed, just the env var.
 
@@ -70,7 +72,7 @@ except ImportError:
     # automatically, but real shell-exported env vars still work fine.
     pass
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 USE_REAL_LLM = bool(os.environ.get("GEMINI_API_KEY"))
 
 # Retries for TRANSIENT server-side failures (503 overloaded, 429 rate

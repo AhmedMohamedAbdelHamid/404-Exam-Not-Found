@@ -136,19 +136,61 @@ _BOOTSTRAP_RETRY_SECONDS = 30.0
 _BOOTSTRAP_ADVISORY_LOCK = 4_040_404
 
 
+def _resolve_ipv4(host: str) -> str | None:
+    """Best-effort A-record lookup for `host`, or None if it has no IPv4 address.
+
+    Supabase's *direct* connection host (``db.<ref>.supabase.co``) is
+    IPv6-only in most regions. Vercel's serverless network has no IPv6
+    egress, so connecting to that host fails with "Network is unreachable"
+    / "Cannot assign requested address" even though DATABASE_URL is
+    otherwise correct. Forcing the IPv4 address via `hostaddr` (with the
+    original hostname kept for TLS SNI/cert checks) works when an IPv4
+    address does exist; when it doesn't (true IPv6-only host), this simply
+    returns None and the connection attempt proceeds unchanged, surfacing
+    the same clear error as before.
+    """
+    import socket
+
+    try:
+        infos = socket.getaddrinfo(host, None, socket.AF_INET)
+    except OSError:
+        return None
+    return infos[0][4][0] if infos else None
+
+
 def _raw_postgres_connect() -> Any:
     import psycopg
     from psycopg.rows import dict_row
+
+    url = _database_url()
+    kwargs: dict[str, Any] = {}
+
+    try:
+        import re as _re
+
+        match = _re.search(r"@([^:/?]+)", url)
+        host = match.group(1) if match else None
+    except Exception:  # noqa: BLE001
+        host = None
+
+    if host:
+        ipv4 = _resolve_ipv4(host)
+        if ipv4:
+            # hostaddr pins the TCP destination to the IPv4 address while
+            # `host` (still `host` in the DSN/url) is kept for TLS SNI and
+            # certificate verification, so this is safe with sslmode=require.
+            kwargs["hostaddr"] = ipv4
 
     # prepare_threshold=None: server-side prepared statements break behind
     # Supabase's transaction pooler (port 6543); disabling them works for both
     # the session and the transaction pooler. Every request here opens short
     # connections, so prepared statements would never pay off anyway.
     return psycopg.connect(
-        _database_url(),
+        url,
         row_factory=dict_row,
         prepare_threshold=None,
         connect_timeout=10,
+        **kwargs,
     )
 
 

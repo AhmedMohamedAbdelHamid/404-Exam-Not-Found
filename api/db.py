@@ -57,9 +57,27 @@ class StorageNotConfiguredError(RuntimeError):
     """Raised instead of silently falling back to per-instance SQLite on Vercel."""
 
 
+DATABASE_URL_ENV_ALIASES = (
+    "DATABASE_URL",
+    "Database_url",
+    "database_url",
+    "DATABASE_URI",
+    "POSTGRES_URL",
+    "POSTGRES_URI",
+    "SUPABASE_DB_URL",
+)
+
+
 def _database_url() -> str:
     # Tolerate quotes pasted around the value in a dashboard / .env file.
-    return (os.getenv(DATABASE_URL_ENV) or "").strip().strip("\"'").strip()
+    # Also tolerate the env var being added under a differently-cased or
+    # differently-named key (e.g. "Database_url") -- env var names are
+    # case-sensitive, and dashboards make it easy to add the wrong one.
+    for name in DATABASE_URL_ENV_ALIASES:
+        value = os.getenv(name)
+        if value and value.strip():
+            return value.strip().strip("\"'").strip()
+    return ""
 
 
 def _running_on_vercel() -> bool:

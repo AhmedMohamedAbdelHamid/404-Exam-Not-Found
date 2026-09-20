@@ -26,7 +26,7 @@ from __future__ import annotations
 import random
 import re
 
-from db import connection
+from db import connection, json_value
 
 _ISOLATED_LETTER_RE = re.compile(r"(?m)^[A-D]\s*$")
 
@@ -91,7 +91,7 @@ def get_chunks(
             "language": row["language"],
             "chunk_type": row["chunk_type"],
             "text": row["text"],
-            "source_pages": list(row["source_pages"]) if row["source_pages"] else [],
+            "source_pages": list(json_value(row["source_pages"])) if row["source_pages"] else [],
             "exercise_density_score": _exercise_density_score(row["text"]),
         })
 

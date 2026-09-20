@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import random
 import secrets
+import sqlite3
 import psycopg
 from threading import RLock
 from typing import Any, Callable
@@ -254,7 +255,7 @@ class AssessmentService:
     @staticmethod
     def _known_generation_error(exc: Exception) -> bool:
         module_name = type(exc).__module__
-        return isinstance(exc, (GenerationUnavailable, LLMCallError, psycopg.Error, OSError, ImportError)) or module_name.startswith(
+        return isinstance(exc, (GenerationUnavailable, LLMCallError, psycopg.Error, sqlite3.Error, OSError, ImportError)) or module_name.startswith(
             ("chromadb.", "google.genai.", "httpx.")
         )
 
@@ -286,7 +287,7 @@ class AssessmentService:
             return dict(state), topic, difficulty
         except ServiceError:
             raise
-        except (psycopg.Error, OSError) as exc:
+        except (psycopg.Error, sqlite3.Error, OSError) as exc:
             raise ServiceError(
                 503,
                 "GENERATION_UNAVAILABLE",
@@ -486,7 +487,7 @@ class AssessmentService:
                 if topic is not None and attempt.runtime.fallback_available:
                     try:
                         question = self.backup_fn(topic, attempt.language, difficulty)
-                    except (psycopg.Error, OSError):
+                    except (psycopg.Error, sqlite3.Error, OSError):
                         question = None
                 if question is None:
                     raise ServiceError(

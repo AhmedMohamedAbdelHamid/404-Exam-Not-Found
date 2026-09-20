@@ -49,9 +49,17 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        # AnalyticsStore retains only path/configuration; initialization opens
-        # and closes its own SQLite connection.
-        assessment_service.initialize_analytics()
+        # Best-effort schema bootstrap. If storage is unreachable, the API
+        # still starts (so /api/health and the fallback question pool keep
+        # working) and individual requests report the failure themselves.
+        try:
+            assessment_service.initialize_analytics()
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.error(
+                "Analytics initialization failed at startup: %s.%s",
+                type(exc).__module__,
+                type(exc).__name__,
+            )
         yield
 
     application = FastAPI(

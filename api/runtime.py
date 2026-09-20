@@ -27,8 +27,6 @@ def _chunk_languages() -> set[str]:
     etc.) are kept as-is for API/frontend compatibility even though the
     backing store changed.
     """
-    if not os.getenv("DATABASE_URL"):
-        return set()
     try:
         with connection() as conn, conn.cursor() as cur:
             cur.execute("SELECT DISTINCT language FROM chunks")
@@ -85,7 +83,7 @@ class RuntimeInspector:
             names = _chunk_languages()
         except Exception:
             names = set()
-        database_configured = bool(os.getenv("DATABASE_URL"))
+        database_configured = True  # Postgres, or the bundled SQLite fallback
         return (
             database_configured and bool(names),
             "en" in names,

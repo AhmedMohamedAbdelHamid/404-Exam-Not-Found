@@ -1,6 +1,23 @@
 import { z } from "zod";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Where the FastAPI backend lives.
+// - Deployed on Vercel the API is served from the same origin (/api/...), so the
+//   default is "" (relative URLs) and NEXT_PUBLIC_API_BASE_URL should stay unset.
+// - `next dev` defaults to a locally running FastAPI on port 8000.
+// - A value without a scheme (e.g. "my-app.vercel.app") gets https:// so it can't
+//   silently turn into a relative path.
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (configured === undefined || configured === "") {
+    return process.env.NODE_ENV === "development" ? "http://localhost:8000" : "";
+  }
+  const withScheme = /^(https?:)?\/\//.test(configured) || configured.startsWith("/")
+    ? configured
+    : `https://${configured}`;
+  return withScheme.replace(/\/+$/, "");
+}
+
+const API_BASE = resolveApiBase();
 
 const languageSchema = z.enum(["en", "ar"]);
 const progressSchema = z.object({

@@ -1,0 +1,10 @@
+# Not needed at runtime on Vercel (legacy Streamlit app, duplicate web/ copy, reports, source PDFs).
+/web/
+/books/
+/frontend/
+/.streamlit/
+/app.py
+__pycache__/
+*.pyc
+eval_report_*.txt
+verification_report_*.txt

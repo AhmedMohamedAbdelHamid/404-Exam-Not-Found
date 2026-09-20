@@ -1,7 +1,17 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
   "functions": {
     "api/main.py": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "api/**",
+      "excludeFiles": "{node_modules/**,.next/**,web/**,books/**,frontend/**,.git/**}"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/main"
+    }
+  ]
 }

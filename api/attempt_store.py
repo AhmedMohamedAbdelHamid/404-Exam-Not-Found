@@ -13,7 +13,7 @@ from schema import QuestionOut
 from models import AnswerResponse, AnswerState, LanguageCode, QuestionSource, RuntimeStatus
 from chunk_sampler import ChunkSampler
 from runtime import RuntimeInspector
-from db import connection
+from db import connection, json_param, json_value
 
 
 @dataclass
@@ -151,7 +151,7 @@ class AttemptStore:
                 ON CONFLICT (attempt_id) DO UPDATE SET
                     context = EXCLUDED.context, updated_at = now()
                 """,
-                (str(attempt.attempt_id), _pg_json(payload)),
+                (str(attempt.attempt_id), json_param(payload)),
             )
 
     def get(self, attempt_id: UUID) -> AttemptContext | None:
@@ -163,17 +163,10 @@ class AttemptStore:
             row = cur.fetchone()
         if row is None:
             return None
-        runtime = self._runtime_inspector.for_language(row["context"]["language"])
-        return _context_from_dict(row["context"], runtime=runtime)
+        context = json_value(row["context"])
+        runtime = self._runtime_inspector.for_language(context["language"])
+        return _context_from_dict(context, runtime=runtime)
 
     def create_id(self) -> UUID:
         return uuid4()
 
-
-def _pg_json(payload: dict) -> Any:
-    """psycopg needs an explicit Json() wrapper for a dict bound to a
-    jsonb column; imported lazily to keep the module's import list
-    matching the original file's shape at a glance."""
-    from psycopg.types.json import Json
-
-    return Json(payload)

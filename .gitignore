@@ -1,4 +1,14 @@
 node_modules/
 .next/
 coverage/
-.env.local
+.vercel/
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.sqlite3
+
+# Secrets -- never commit. Set these in Vercel -> Project Settings -> Environment Variables.
+.env
+.env.*
+!.env.example

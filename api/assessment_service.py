@@ -140,10 +140,11 @@ class AssessmentService:
             raise ServiceError(503, "STORAGE_NOT_CONFIGURED", str(exc)) from None
         except Exception as exc:
             self._log_analytics_failure("initialization", exc)
+            detail = f"{type(exc).__name__}: {str(exc)[:200]}"
             raise ServiceError(
                 503,
                 "ANALYTICS_UNAVAILABLE",
-                "We couldn't safely start this assessment. Please retry.",
+                f"We couldn't safely start this assessment. Please retry. ({detail})",
                 retryable=True,
             ) from None
 

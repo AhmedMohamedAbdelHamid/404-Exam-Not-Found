@@ -94,6 +94,17 @@ def database_url_problem() -> str | None:
     if not url:
         return "DATABASE_URL is not set."
     if url.startswith(("postgresql://", "postgres://")):
+        if "pooler.supabase.com" in url:
+            match = re.search(r"postgres(?:ql)?://([^:@/]+)(?::[^@]*)?@", url)
+            username = match.group(1) if match else ""
+            if username == "postgres" or (username and "." not in username):
+                return (
+                    "DATABASE_URL points at Supabase's pooler host but the username is "
+                    f"{username!r} instead of 'postgres.<project-ref>'. Pooler connections "
+                    "require the project-ref-qualified username shown on the Connection "
+                    "string page (Session pooler / Transaction pooler tab) -- the plain "
+                    "'postgres' username only works on the direct db.<ref>.supabase.co host."
+                )
         return None
     if url.startswith(("http://", "https://")):
         return (
